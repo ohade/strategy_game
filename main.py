@@ -6,28 +6,8 @@ from units import Unit
 from background import Background
 from ui import UnitInfoPanel
 from effects import AttackEffect, DestinationIndicator, ExplosionEffect # Import the effect classes
-
-# Constants
-SCREEN_WIDTH: int = 1280
-SCREEN_HEIGHT: int = 720
-WINDOW_TITLE: str = "Strategy Game MVP"
-BACKGROUND_COLOR: tuple[int, int, int] = (0, 0, 20) # Dark blue space-like
-FPS: int = 60
-
-# --- Map and Minimap Constants ---
-MAP_WIDTH: int = 4000
-MAP_HEIGHT: int = 3000
-MINIMAP_WIDTH: int = 200
-MINIMAP_HEIGHT: int = 150 # Maintain aspect ratio of map (4000/3000 = 4/3)
-MINIMAP_X: int = SCREEN_WIDTH - MINIMAP_WIDTH - 10 # 10px padding from right edge
-MINIMAP_Y: int = SCREEN_HEIGHT - MINIMAP_HEIGHT - 10 # 10px padding from bottom edge
-MINIMAP_BG_COLOR: tuple[int, int, int, int] = (50, 50, 50, 150) # Semi-transparent dark grey
-MINIMAP_BORDER_COLOR: tuple[int, int, int] = (100, 100, 100)
-MINIMAP_UNIT_SIZE: int = 2 # Size of dots on minimap
-
-# --- Scaling Factors ---
-MINIMAP_SCALE_X: float = MINIMAP_WIDTH / MAP_WIDTH
-MINIMAP_SCALE_Y: float = MINIMAP_HEIGHT / MAP_HEIGHT
+from constants import * # Import all constants
+from input_handler import InputHandler # Import the new handler
 
 def main() -> None:
     """Main game function."""
@@ -46,16 +26,21 @@ def main() -> None:
     # Create UI components
     unit_info_panel = UnitInfoPanel(SCREEN_WIDTH)
     effects: list = [] # List to hold all active effects (attack, explosion, etc.)
+    
+    # --- Create Input Handler ---
+    input_handler = InputHandler()
 
     # --- Create Units ---
     friendly_units: list[Unit] = [
         Unit(300, 300, 'friendly'),
+        Unit(350, 350, 'friendly'),
+        Unit(350, 350, 'friendly'),
         Unit(350, 350, 'friendly')
     ]
     enemy_units: list[Unit] = [
-        Unit(800, 400, 'enemy'),
-        Unit(900, 500, 'enemy'),
-        Unit(850, 450, 'enemy')
+        Unit(800, 400, 'enemy')
+        # Unit(900, 500, 'enemy'),
+        # Unit(850, 450, 'enemy')
     ]
     all_units: list[Unit] = friendly_units + enemy_units
 
@@ -67,155 +52,36 @@ def main() -> None:
     # Variables to track drag selection
     is_dragging: bool = False
     drag_start_pos: tuple[int, int] | None = None
-    drag_current_pos: tuple[int, int] | None = None
+    drag_current_pos: tuple[int, int] | None = None # Keep track for drawing
 
     while running:
         # --- Delta Time Calculation ---
         # dt = time difference between frames in seconds. Crucial for frame-rate independent movement.
         dt: float = clock.tick(FPS) / 1000.0
 
-        # --- Event Handling ---
+        # --- Event Handling (Moved to InputHandler) ---
+        events = pygame.event.get()
         keys = pygame.key.get_pressed() # Get current key states
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            # --- Mouse Wheel for Zoom ---    
-            elif event.type == pygame.MOUSEWHEEL:
-                # event.y gives scroll amount (+1 for up/zoom in, -1 for down/zoom out)
-                camera.handle_zoom(event.y, pygame.mouse.get_pos()) 
-            # --- Mouse Events for Selection --- 
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1: # Left mouse button
-                    # Check if the click was on the info panel's toggle button first
-                    if unit_info_panel.handle_click(event.pos):
-                        continue # Click was handled by the panel, don't process further
-                    
-                    mouse_screen_pos = event.pos
-                    # Convert screen coordinates to world coordinates using the camera
-                    mouse_world_x, mouse_world_y = camera.screen_to_world_coords(*mouse_screen_pos)
-                    
-                    # Check if any keyboard modifiers are pressed (e.g., Shift for adding to selection)
-                    mods = pygame.key.get_mods()
-                    add_to_selection = mods & pygame.KMOD_SHIFT
-                    
-                    # Start potential drag operation
-                    is_dragging = True
-                    drag_start_pos = mouse_screen_pos
-                    drag_current_pos = mouse_screen_pos
-                    
-                    # Check for direct unit click
-                    clicked_on_unit = False
-                    for unit in friendly_units:
-                        if unit.get_rect().collidepoint(mouse_world_x, mouse_world_y):
-                            clicked_on_unit = True
-                            
-                            # If Shift is held, toggle this unit's selection without affecting others
-                            if add_to_selection:
-                                if unit in selected_units:
-                                    # Deselect the unit if already selected
-                                    selected_units.remove(unit)
-                                    unit.selected = False
-                                else:
-                                    # Add to selection
-                                    selected_units.append(unit)
-                                    unit.selected = True
-                            else:
-                                # Clear previous selection
-                                for u in selected_units:
-                                    u.selected = False
-                                selected_units.clear()
-                                
-                                # Select just this unit
-                                unit.selected = True
-                                selected_units.append(unit)
-                            break
-                    
-                    # If clicked on empty space and not adding to selection, deselect all
-                    if not clicked_on_unit and not add_to_selection:
-                        for unit in selected_units:
-                            unit.selected = False
-                        selected_units.clear()
-
-            # --- Mouse Move for Drag Selection ---
-            elif event.type == pygame.MOUSEMOTION:
-                if is_dragging and drag_start_pos:
-                    drag_current_pos = event.pos
-                    
-            # --- Mouse Release to Complete Selection ---
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1 and is_dragging and drag_start_pos and drag_current_pos:
-                    # If the drag distance is significant (prevent accidental tiny drags)
-                    drag_distance = math.hypot(
-                        drag_start_pos[0] - drag_current_pos[0],
-                        drag_start_pos[1] - drag_current_pos[1]
-                    )
-                    
-                    if drag_distance > 5:  # Minimum drag distance threshold
-                        # Convert screen coords to world coords
-                        start_world_x, start_world_y = camera.screen_to_world_coords(*drag_start_pos)
-                        end_world_x, end_world_y = camera.screen_to_world_coords(*drag_current_pos)
-                        
-                        # Define the selection rectangle in world coordinates
-                        selection_world_rect = pygame.Rect(
-                            min(start_world_x, end_world_x),
-                            min(start_world_y, end_world_y),
-                            abs(end_world_x - start_world_x),
-                            abs(end_world_y - start_world_y)
-                        )
-                        
-                        # Clear previous selection unless Shift is held
-                        mods = pygame.key.get_mods()
-                        add_to_selection = mods & pygame.KMOD_SHIFT
-                        if not add_to_selection:
-                            for unit in selected_units:
-                                unit.selected = False
-                            selected_units.clear()
-                        
-                        # Select all friendly units within the selection rectangle
-                        for unit in friendly_units:
-                            if unit.get_rect().colliderect(selection_world_rect):
-                                unit.selected = True
-                                if unit not in selected_units:
-                                    selected_units.append(unit)
-                    
-                    # Reset drag state
-                    is_dragging = False
-                    drag_start_pos = None
-                    drag_current_pos = None
-                
-                elif event.button == 3: # Right mouse button for commands
-                    mouse_screen_pos = event.pos
-                    # Convert screen coordinates to world coordinates
-                    target_world_x, target_world_y = camera.screen_to_world_coords(*mouse_screen_pos)
-                    
-                    # Clear previous indicators for selected units
-                    destination_indicators = [ind for ind in destination_indicators 
-                                             if ind.unit not in selected_units]
-                    
-                    # Check if the right-click hit an enemy unit
-                    clicked_enemy: Unit | None = None
-                    for enemy in enemy_units:
-                        if enemy.get_rect().collidepoint(target_world_x, target_world_y):
-                            clicked_enemy = enemy
-                            break
-
-                    if clicked_enemy:
-                        # Target enemy unit for attack
-                        for unit in selected_units:
-                            unit.set_target(clicked_enemy)
-                    else:
-                        # Move to the clicked point on the map
-                        # Clamp to map boundaries for safety
-                        target_x = min(max(0, target_world_x), MAP_WIDTH)
-                        target_y = min(max(0, target_world_y), MAP_HEIGHT)
-                        
-                        # Issue move command to all selected units
-                        for unit in selected_units:
-                            unit.move_to_point(target_x, target_y)
-                            # Create a destination indicator only if not targeting an enemy
-                            if clicked_enemy is None:
-                                indicator = DestinationIndicator(target_x, target_y)
-                                destination_indicators.append(indicator)
+        mouse_pos = pygame.mouse.get_pos()
+        
+        # Call the input handler to process events and update state
+        running, selected_units, destination_indicators, \
+        is_dragging, drag_start_pos, drag_current_pos = \
+            input_handler.process_input(
+                events,
+                keys,
+                mouse_pos,
+                dt,
+                camera,
+                all_units,
+                selected_units,
+                unit_info_panel,
+                destination_indicators
+            )
+        
+        # Exit loop if running is set to False
+        if not running:
+            break
 
         # --- Game Logic Update ---
         camera.update(dt, keys) # Update camera based on key presses and dt
