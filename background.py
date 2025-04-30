@@ -37,62 +37,45 @@ class Background:
             self.stars.append((x, y, radius, brightness))
             
     def draw(self, surface: pygame.Surface, camera: Camera) -> None:
-        """Draw the background elements.
-        
+        """Draw the visible stars and grid lines based on camera position.
+
         Args:
-            surface (pygame.Surface): Surface to draw on.
-            camera (Camera): Camera for position calculations.
+            surface (pygame.Surface): The surface to draw on (the screen).
+            camera (Camera): The camera object providing the view offset and zoom.
         """
-        # Draw visible stars
-        for star_x, star_y, radius, brightness in self.stars:
-            # Check if star is in the currently visible area
-            if (camera.camera_rect.left <= star_x <= camera.camera_rect.right and 
-                camera.camera_rect.top <= star_y <= camera.camera_rect.bottom):
-                
-                # Convert to screen coordinates
+        # Get the visible area in world coordinates
+        world_view = camera.get_world_view()
+
+        # Draw stars
+        for star in self.stars:
+            star_x, star_y, _, brightness = star
+            # Check if the star is within the camera's world view
+            if world_view.collidepoint(star_x, star_y):
+                # Convert world coords to screen coords using camera
                 screen_x, screen_y = camera.apply_coords(star_x, star_y)
-                
-                # Draw the star
-                color = (brightness, brightness, brightness)
-                pygame.draw.circle(surface, color, (screen_x, screen_y), radius)
-        
-        # Draw grid
-        self.draw_grid(surface, camera)
-                
-    def draw_grid(self, surface: pygame.Surface, camera: Camera) -> None:
-        """Draw a coordinate grid.
-        
-        Args:
-            surface (pygame.Surface): Surface to draw on.
-            camera (Camera): Camera for position calculations.
-        """
-        # Calculate the visible area of the map
-        visible_left = camera.camera_rect.left
-        visible_top = camera.camera_rect.top
-        visible_right = camera.camera_rect.right
-        visible_bottom = camera.camera_rect.bottom
-        
-        # Find the grid lines that are visible
-        start_x = (visible_left // self.grid_size) * self.grid_size
-        start_y = (visible_top // self.grid_size) * self.grid_size
-        
-        # Grid colors
-        grid_color = (40, 40, 40)  # Dark gray
-        
-        # Draw vertical grid lines
-        x = start_x
-        while x <= visible_right:
-            start_screen_x, start_screen_y = camera.apply_coords(x, visible_top)
-            end_screen_x, end_screen_y = camera.apply_coords(x, visible_bottom)
-            pygame.draw.line(surface, grid_color, (start_screen_x, start_screen_y), 
-                           (end_screen_x, end_screen_y), 1)
-            x += self.grid_size
-            
-        # Draw horizontal grid lines
-        y = start_y
-        while y <= visible_bottom:
-            start_screen_x, start_screen_y = camera.apply_coords(visible_left, y)
-            end_screen_x, end_screen_y = camera.apply_coords(visible_right, y)
-            pygame.draw.line(surface, grid_color, (start_screen_x, start_screen_y), 
-                           (end_screen_x, end_screen_y), 1)
-            y += self.grid_size
+                # Simple check if screen coords are within screen bounds (optional redundancy)
+                if 0 <= screen_x < surface.get_width() and 0 <= screen_y < surface.get_height():
+                    pygame.draw.circle(surface, (brightness, brightness, brightness), (screen_x, screen_y), star[2])
+
+        # Draw grid lines (optional, can be performance intensive)
+        # Draw vertical lines
+        start_x = (world_view.left // self.grid_size) * self.grid_size
+        for x in range(int(start_x), int(world_view.right), self.grid_size):
+            screen_x1, screen_y1 = camera.apply_coords(x, world_view.top)
+            screen_x2, screen_y2 = camera.apply_coords(x, world_view.bottom)
+            # Clip lines to screen bounds if necessary
+            screen_y1 = max(0, min(screen_y1, surface.get_height()))
+            screen_y2 = max(0, min(screen_y2, surface.get_height()))
+            if screen_x1 >= 0 and screen_x1 < surface.get_width(): # Only draw if visible on screen X
+                pygame.draw.line(surface, (40, 40, 40), (screen_x1, screen_y1), (screen_x2, screen_y2), 1)
+
+        # Draw horizontal lines
+        start_y = (world_view.top // self.grid_size) * self.grid_size
+        for y in range(int(start_y), int(world_view.bottom), self.grid_size):
+            screen_x1, screen_y1 = camera.apply_coords(world_view.left, y)
+            screen_x2, screen_y2 = camera.apply_coords(world_view.right, y)
+            # Clip lines to screen bounds
+            screen_x1 = max(0, min(screen_x1, surface.get_width()))
+            screen_x2 = max(0, min(screen_x2, surface.get_width()))
+            if screen_y1 >= 0 and screen_y1 < surface.get_height(): # Only draw if visible on screen Y
+                pygame.draw.line(surface, (40, 40, 40), (screen_x1, screen_y1), (screen_x2, screen_y2), 1)

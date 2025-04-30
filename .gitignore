@@ -134,6 +134,9 @@ cython_debug/
 # Pyflow
 pyflow.lock
 
+# IDE directories
+.idea/
+
 # OS generated files
 .DS_Store
 Thumbs.db

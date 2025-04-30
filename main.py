@@ -79,17 +79,20 @@ def main() -> None:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            # --- Mouse Events for Selection ---
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            # --- Mouse Wheel for Zoom ---    
+            elif event.type == pygame.MOUSEWHEEL:
+                # event.y gives scroll amount (+1 for up/zoom in, -1 for down/zoom out)
+                camera.handle_zoom(event.y, pygame.mouse.get_pos()) 
+            # --- Mouse Events for Selection --- 
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # Left mouse button
                     # Check if the click was on the info panel's toggle button first
                     if unit_info_panel.handle_click(event.pos):
                         continue # Click was handled by the panel, don't process further
                     
                     mouse_screen_pos = event.pos
-                    # Convert screen coordinates to world coordinates
-                    mouse_world_x = mouse_screen_pos[0] + camera.camera_rect.left
-                    mouse_world_y = mouse_screen_pos[1] + camera.camera_rect.top
+                    # Convert screen coordinates to world coordinates using the camera
+                    mouse_world_x, mouse_world_y = camera.screen_to_world_coords(*mouse_screen_pos)
                     
                     # Check if any keyboard modifiers are pressed (e.g., Shift for adding to selection)
                     mods = pygame.key.get_mods()
@@ -148,20 +151,16 @@ def main() -> None:
                     )
                     
                     if drag_distance > 5:  # Minimum drag distance threshold
-                        # Create a selection rectangle in screen coordinates
-                        selection_rect = pygame.Rect(
-                            min(drag_start_pos[0], drag_current_pos[0]),
-                            min(drag_start_pos[1], drag_current_pos[1]),
-                            abs(drag_current_pos[0] - drag_start_pos[0]),
-                            abs(drag_current_pos[1] - drag_start_pos[1])
-                        )
+                        # Convert screen coords to world coords
+                        start_world_x, start_world_y = camera.screen_to_world_coords(*drag_start_pos)
+                        end_world_x, end_world_y = camera.screen_to_world_coords(*drag_current_pos)
                         
-                        # Convert the selection rect to world coordinates
-                        selection_rect_world = pygame.Rect(
-                            selection_rect.left + camera.camera_rect.left,
-                            selection_rect.top + camera.camera_rect.top,
-                            selection_rect.width,
-                            selection_rect.height
+                        # Define the selection rectangle in world coordinates
+                        selection_world_rect = pygame.Rect(
+                            min(start_world_x, end_world_x),
+                            min(start_world_y, end_world_y),
+                            abs(end_world_x - start_world_x),
+                            abs(end_world_y - start_world_y)
                         )
                         
                         # Clear previous selection unless Shift is held
@@ -174,7 +173,7 @@ def main() -> None:
                         
                         # Select all friendly units within the selection rectangle
                         for unit in friendly_units:
-                            if unit.get_rect().colliderect(selection_rect_world):
+                            if unit.get_rect().colliderect(selection_world_rect):
                                 unit.selected = True
                                 if unit not in selected_units:
                                     selected_units.append(unit)
@@ -184,36 +183,39 @@ def main() -> None:
                     drag_start_pos = None
                     drag_current_pos = None
                 
-                elif event.button == 3: # Right mouse button
-                    if selected_units: # Check if any friendly units are selected
-                        mouse_screen_pos = event.pos
-                        mouse_world_x = mouse_screen_pos[0] + camera.camera_rect.left
-                        mouse_world_y = mouse_screen_pos[1] + camera.camera_rect.top
+                elif event.button == 3: # Right mouse button for commands
+                    mouse_screen_pos = event.pos
+                    # Convert screen coordinates to world coordinates
+                    target_world_x, target_world_y = camera.screen_to_world_coords(*mouse_screen_pos)
+                    
+                    # Clear previous indicators for selected units
+                    destination_indicators = [ind for ind in destination_indicators 
+                                             if ind.unit not in selected_units]
+                    
+                    # Check if the right-click hit an enemy unit
+                    clicked_enemy: Unit | None = None
+                    for enemy in enemy_units:
+                        if enemy.get_rect().collidepoint(target_world_x, target_world_y):
+                            clicked_enemy = enemy
+                            break
 
-                        # Check if the right-click hit an enemy unit
-                        clicked_enemy: Unit | None = None
-                        for enemy in enemy_units:
-                            if enemy.get_rect().collidepoint(mouse_world_x, mouse_world_y):
-                                clicked_enemy = enemy
-                                break
-
-                        if clicked_enemy:
-                            # Target enemy unit for attack
-                            for unit in selected_units:
-                                unit.set_target(clicked_enemy)
-                        else:
-                            # Move to the clicked point on the map
-                            # Clamp to map boundaries for safety
-                            target_x = min(max(0, mouse_world_x), MAP_WIDTH)
-                            target_y = min(max(0, mouse_world_y), MAP_HEIGHT)
-                            
-                            # Issue move command to all selected units
-                            for unit in selected_units:
-                                unit.move_to_point(target_x, target_y)
-                                # Create a destination indicator only if not targeting an enemy
-                                if clicked_enemy is None:
-                                    indicator = DestinationIndicator(target_x, target_y)
-                                    destination_indicators.append(indicator)
+                    if clicked_enemy:
+                        # Target enemy unit for attack
+                        for unit in selected_units:
+                            unit.set_target(clicked_enemy)
+                    else:
+                        # Move to the clicked point on the map
+                        # Clamp to map boundaries for safety
+                        target_x = min(max(0, target_world_x), MAP_WIDTH)
+                        target_y = min(max(0, target_world_y), MAP_HEIGHT)
+                        
+                        # Issue move command to all selected units
+                        for unit in selected_units:
+                            unit.move_to_point(target_x, target_y)
+                            # Create a destination indicator only if not targeting an enemy
+                            if clicked_enemy is None:
+                                indicator = DestinationIndicator(target_x, target_y)
+                                destination_indicators.append(indicator)
 
         # --- Game Logic Update ---
         camera.update(dt, keys) # Update camera based on key presses and dt
@@ -335,15 +337,14 @@ def main() -> None:
             pygame.draw.circle(minimap_surface, unit.color, (mini_x, mini_y), 2)
 
         # Draw camera view rectangle on minimap
-        cam_rect_world = camera.camera_rect
-        cam_rect_mini_x = int((cam_rect_world.left / MAP_WIDTH) * MINIMAP_WIDTH)
-        cam_rect_mini_y = int((cam_rect_world.top / MAP_HEIGHT) * MINIMAP_HEIGHT)
-        cam_rect_mini_width = int((cam_rect_world.width / MAP_WIDTH) * MINIMAP_WIDTH)
-        cam_rect_mini_height = int((cam_rect_world.height / MAP_HEIGHT) * MINIMAP_HEIGHT)
+        cam_rect_world = camera.get_world_view() # Use the new method
+        cam_rect_mini_x = int((cam_rect_world.left * MINIMAP_SCALE_X)) # Use world_view properties and scaling factors
+        cam_rect_mini_y = int((cam_rect_world.top * MINIMAP_SCALE_Y))
+        cam_rect_mini_width = int((cam_rect_world.width * MINIMAP_SCALE_X))
+        cam_rect_mini_height = int((cam_rect_world.height * MINIMAP_SCALE_Y))
         
         camera_view_rect_mini = pygame.Rect(cam_rect_mini_x, cam_rect_mini_y, 
-                                          cam_rect_mini_width, cam_rect_mini_height)
-        
+                                          max(1, cam_rect_mini_width), max(1, cam_rect_mini_height)) # Ensure minimum size of 1x1
         pygame.draw.rect(minimap_surface, (255, 255, 255), camera_view_rect_mini, 1) # White outline
             
         # Draw minimap outline
@@ -354,7 +355,8 @@ def main() -> None:
 
         # --- Debug: Draw Camera Position ---
         font = pygame.font.Font(None, 30) # Default font, size 30
-        cam_text = font.render(f"Camera: ({camera.camera_rect.x}, {camera.camera_rect.y})", True, (255, 255, 255))
+        # Update debug text to show world_x, world_y and zoom_level
+        cam_text = font.render(f"World: ({int(camera.world_x)}, {int(camera.world_y)}) Zoom: {camera.zoom_level:.2f}", True, (255, 255, 255))
         screen.blit(cam_text, (10, 10))
 
         pygame.display.flip() # Update the full screen
