@@ -84,16 +84,17 @@ Refactor `main.py` to improve modularity, readability, and maintainability by ex
     - [x] Create smooth transitions between movement states.
     - [x] Run tests and ensure they pass.
     
-- [ ] **Visual Assets Integration:**
-    - [ ] Create an assets module to handle loading and managing visual assets.
-    - [ ] Design or source appropriate ship/unit graphics.
-    - [ ] Implement sprite/image rendering to replace geometric shapes.
-    - [ ] Add rotation and animation support for sprites.
-    - [ ] Create visual feedback for different unit states (moving, attacking, damaged).
-    - [ ] Update rendering to properly handle new visual assets.
-    - [ ] Enhanced space background with images of planets, nebulae, and comets.
-    - [ ] Implement parallax scrolling for multi-layered background effects.
-    - [ ] Run tests and ensure the game looks and performs well with new assets.
+- [x] **Visual Assets Integration:**
+    - [x] Create an assets module to handle loading and managing visual assets.
+    - [x] Design or source appropriate ship/unit graphics (created custom ship sprites).
+    - [x] Implement sprite/image rendering to replace geometric shapes.
+    - [x] Add rotation support for sprites.
+    - [x] Add animation support for effect sprites (explosion animation frames created).
+    - [x] Create visual feedback for different unit states (moving, attacking, damaged).
+    - [x] Update rendering to properly handle new visual assets.
+    - [x] Enhanced space background with images of planets, nebulae, and comets.
+    - [x] Implement parallax scrolling for multi-layered background effects.
+    - [x] Run tests and ensure the game looks and performs well with new assets.
 
 ### Phase 8: Code Quality and Safety Improvements
 - [ ] **Static Type Checking with mypy:**

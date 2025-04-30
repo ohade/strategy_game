@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from effects import AttackEffect # Import the new effect class
 from game_logic import update_unit_attack, smooth_movement
 from camera import Camera
+from asset_manager import get_ship_sprite  # Import the ship sprite getter
 
 # Define colors
 GREEN = (0, 255, 0)
@@ -145,31 +146,54 @@ class Unit:
                     pygame.draw.polygon(temp_surf, final_color, local_points)
                     surface.blit(temp_surf, (min_x, min_y))
 
-        # --- Draw Main Unit Shape (Triangle) --- 
-        # Define base points for an arrowhead/triangle pointing right (0 radians)
-        # Scaled by radius
-        p1 = (self.radius, 0) # Nose
-        p2 = (-self.radius * 0.8, self.radius * 0.7) # Back left wing
-        p3 = (-self.radius * 0.8, -self.radius * 0.7) # Back right wing
-        base_points = [p1, p2, p3]
+        # --- Draw Ship Sprite --- 
+        # Get the appropriate sprite for this unit type
+        
+        try:
+            # Get the sprite and rotate it according to the unit's rotation
+            sprite = get_ship_sprite(self.unit_type)
+            
+            # Rotate the sprite (0 degrees = facing right, consistent with our rotation system)
+            rotated_sprite = pygame.transform.rotate(sprite, -self.rotation)  # Negative because pygame rotates counterclockwise
+            
+            # Get the rect for the rotated sprite
+            sprite_rect = rotated_sprite.get_rect(center=screen_pos)
+            
+            # Draw the rotated sprite
+            surface.blit(rotated_sprite, sprite_rect.topleft)
+            
+            # Draw selection indicator if selected
+            if self.selected:
+                # Draw outline around the sprite
+                pygame.draw.rect(surface, WHITE, sprite_rect, 2)  # 2 pixel width
+                
+        except Exception as e:
+            # Fallback to geometric rendering if sprites can't be loaded
+            print(f"Falling back to geometric rendering: {e}")
+            
+            # Define base points for a triangle
+            p1 = (self.radius, 0)  # Nose
+            p2 = (-self.radius * 0.8, self.radius * 0.7)  # Back left wing
+            p3 = (-self.radius * 0.8, -self.radius * 0.7)  # Back right wing
+            base_points = [p1, p2, p3]
 
-        # Rotate points based on self.rotation (in degrees)
-        angle_rad = math.radians(self.rotation)
-        cos_a = math.cos(angle_rad)
-        sin_a = math.sin(angle_rad)
-        rotated_points = []
-        for x, y in base_points:
-            rotated_x = x * cos_a - y * sin_a
-            rotated_y = x * sin_a + y * cos_a
-            rotated_points.append((screen_pos[0] + rotated_x, screen_pos[1] + rotated_y))
+            # Rotate points based on self.rotation (in degrees)
+            angle_rad = math.radians(self.rotation)
+            cos_a = math.cos(angle_rad)
+            sin_a = math.sin(angle_rad)
+            rotated_points = []
+            for x, y in base_points:
+                rotated_x = x * cos_a - y * sin_a
+                rotated_y = x * sin_a + y * cos_a
+                rotated_points.append((screen_pos[0] + rotated_x, screen_pos[1] + rotated_y))
 
-        # Draw the polygon
-        pygame.draw.polygon(surface, self.color, rotated_points)
+            # Draw the polygon
+            pygame.draw.polygon(surface, self.color, rotated_points)
 
-        # Draw selection indicator if selected
-        if self.selected:
-            # Draw outline around the polygon
-            pygame.draw.polygon(surface, WHITE, rotated_points, 2) # Use thickness 2 for outline
+            # Draw selection indicator if selected
+            if self.selected:
+                # Draw outline around the polygon
+                pygame.draw.polygon(surface, WHITE, rotated_points, 2)
 
         # Draw health bar if not at max HP
         if self.hp < self.hp_max:

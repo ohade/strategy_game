@@ -2,10 +2,10 @@ import sys
 
 import pygame
 
-from background import Background
+from parallax_background import ParallaxBackground
 from camera import Camera
 from constants import *  # Import all constants
-from effects import DestinationIndicator  # Import the effect classes
+from effects import DestinationIndicator, ExplosionEffect  # Import the effect classes
 from game_logic import update_targeting, update_effects, detect_unit_collision, resolve_unit_collision
 from input_handler import InputHandler  # Import the new handler
 from ui import UnitInfoPanel
@@ -23,8 +23,8 @@ def main() -> None:
     # Create camera instance
     camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT, MAP_WIDTH, MAP_HEIGHT)
     
-    # Create background
-    background = Background(MAP_WIDTH, MAP_HEIGHT)
+    # Create parallax background with 3 layers
+    background = ParallaxBackground(MAP_WIDTH, MAP_HEIGHT, num_layers=3)
     
     # Create UI components
     unit_info_panel = UnitInfoPanel(SCREEN_WIDTH)
@@ -129,11 +129,23 @@ def main() -> None:
                 if detect_unit_collision(unit1, unit2):
                     resolve_unit_collision(unit1, unit2)
  
-         # Remove destroyed units
+         # Handle destroyed units
         if units_to_remove:
             print(f"DEBUG Removing units: {[id(u) for u in units_to_remove]}") # DEBUG
         for unit in units_to_remove:
             print(f"DEBUG Attempting to remove unit {id(unit)}...") # DEBUG
+            
+            # Create an explosion effect at the unit's position
+            explosion = ExplosionEffect(
+                world_x=unit.world_x,
+                world_y=unit.world_y,
+                max_radius=unit.radius * 3,  # Make explosion larger than the unit
+                duration=0.8,  # Longer duration for better visibility
+                start_color=(255, 165, 0),  # Orange
+                end_color=(100, 20, 20)  # Dark red
+            )
+            effects.append(explosion)
+            
             # Manually remove from all relevant lists
             if unit in all_units:
                 print(f"DEBUG Removing unit {id(unit)} from all_units.") # DEBUG
