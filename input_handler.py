@@ -1,11 +1,14 @@
 """Handles user input (mouse, keyboard) for the game."""
 
+from typing import List, Tuple, Dict, Optional
+
 import pygame
-from typing import Any, List, Tuple, Dict, Optional
+
 from camera import Camera
-from units import Unit
-from ui import UnitInfoPanel
 from effects import DestinationIndicator
+from ui import UnitInfoPanel
+from units import Unit
+
 
 class InputHandler:
     """Processes Pygame events and keyboard/mouse states."""
@@ -113,56 +116,64 @@ class InputHandler:
                     target_world_x, target_world_y = camera.screen_to_world_coords(click_screen_pos[0], click_screen_pos[1])
                     destination_indicators.clear() # Clear previous indicators
                     
+                    # Check if clicking on an enemy unit first
+                    clicked_enemy = None
+                    for unit in all_units:
+                        if unit.type == 'enemy':
+                            world_rect = unit.get_rect()
+                            unit_screen_rect = camera.apply(world_rect)
+                            if unit_screen_rect.collidepoint(click_screen_pos):
+                                clicked_enemy = unit
+                                break
+                    
                     for i, unit in enumerate(selected_units):
-                         # Ensure only friendly units receive move commands
+                        # Ensure only friendly units receive commands
                         if unit.type == 'friendly':
-                            # Simple formation: Offset positions slightly for multiple units
-                            # TODO: Implement better formation logic
-                            offset_x = (i % 3 - 1) * 30 # Example offset
-                            offset_y = (i // 3 - 1) * 30 # Example offset
-                            unit.move_to_point(target_world_x + offset_x, target_world_y + offset_y)
-                            
-                            # Add a visual indicator
-                            indicator = DestinationIndicator(target_world_x + offset_x, target_world_y + offset_y)
-                            destination_indicators.append(indicator)
+                            if clicked_enemy:  # If clicked on enemy, attack it
+                                unit.attack(clicked_enemy)
+                                # Add a visual indicator on the enemy
+                                indicator = DestinationIndicator(clicked_enemy.world_x, clicked_enemy.world_y, color=(255, 0, 0))  # Red indicator for attack
+                                destination_indicators.append(indicator)
+                            else:  # Otherwise, move to the clicked location
+                                # Simple formation: Offset positions slightly for multiple units
+                                offset_x = (i % 3 - 1) * 30 # Example offset
+                                offset_y = (i // 3 - 1) * 30 # Example offset
+                                unit.move_to_point(target_world_x + offset_x, target_world_y + offset_y)
+                                
+                                # Add a visual indicator
+                                indicator = DestinationIndicator(target_world_x + offset_x, target_world_y + offset_y)
+                                destination_indicators.append(indicator)
                             
             # --- Mouse Button Up Events ---            
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1: # Left mouse button released
-                    if self.is_dragging and self.drag_start_pos and self.drag_current_pos:
-                        # Finalize drag selection
-                        drag_rect_screen = pygame.Rect(
-                            min(self.drag_start_pos[0], self.drag_current_pos[0]),
-                            min(self.drag_start_pos[1], self.drag_current_pos[1]),
-                            abs(self.drag_current_pos[0] - self.drag_start_pos[0]),
-                            abs(self.drag_current_pos[1] - self.drag_start_pos[1])
-                        )
-                        
-                        # Only select if the box is larger than a small threshold (ignore clicks)
-                        if drag_rect_screen.width > 5 or drag_rect_screen.height > 5:
-                            mods = pygame.key.get_mods()
-                            shift_pressed = mods & pygame.KMOD_SHIFT
-                            
-                            if not shift_pressed:
-                                selected_units.clear()
-                                
-                            for unit in all_units:
-                                # Get world rect, then convert to screen rect
-                                world_rect = unit.get_rect()
-                                unit_screen_rect = camera.apply(world_rect)
-                                if drag_rect_screen.colliderect(unit_screen_rect) and unit.type == 'friendly':
-                                    if unit not in selected_units:
-                                        selected_units.append(unit)
-                                        
-                        # Reset drag state AFTER processing selection
-                        self.is_dragging = False
-                        self.drag_start_pos = None
-                        self.drag_current_pos = None
-                    else:
-                        # If not dragging (simple click release), ensure drag state is reset
-                        self.is_dragging = False
-                        self.drag_start_pos = None
-                        self.drag_current_pos = None
+            elif event.type == pygame.MOUSEBUTTONUP and  event.button == 1: # Left mouse button released
+                if self.is_dragging and self.drag_start_pos and self.drag_current_pos:
+                    # Finalize drag selection
+                    drag_rect_screen = pygame.Rect(
+                        min(self.drag_start_pos[0], self.drag_current_pos[0]),
+                        min(self.drag_start_pos[1], self.drag_current_pos[1]),
+                        abs(self.drag_current_pos[0] - self.drag_start_pos[0]),
+                        abs(self.drag_current_pos[1] - self.drag_start_pos[1])
+                    )
+
+                    # Only select if the box is larger than a small threshold (ignore clicks)
+                    if drag_rect_screen.width > 5 or drag_rect_screen.height > 5:
+                        mods = pygame.key.get_mods()
+                        shift_pressed = mods & pygame.KMOD_SHIFT
+
+                        if not shift_pressed:
+                            selected_units.clear()
+
+                        for unit in all_units:
+                            # Get world rect, then convert to screen rect
+                            world_rect = unit.get_rect()
+                            unit_screen_rect = camera.apply(world_rect)
+                            if drag_rect_screen.colliderect(unit_screen_rect) and unit.type == 'friendly':
+                                if unit not in selected_units:
+                                    selected_units.append(unit)
+
+                self.is_dragging = False
+                self.drag_start_pos = None
+                self.drag_current_pos = None
 
             # --- Mouse Motion Events --- 
             elif event.type == pygame.MOUSEMOTION:

@@ -6,6 +6,7 @@ import random
 from camera import Camera
 from typing import Optional, Tuple, Union
 from effects import AttackEffect # Import the new effect class
+from game_logic import update_unit_attack
 
 # Define colors
 GREEN = (0, 255, 0)
@@ -244,45 +245,14 @@ class Unit:
                  # No valid target position, become idle
                  self.set_state("idle")
 
-        # Attacking logic
+        # Use the game_logic module for attack handling instead of inline logic
         if self.state == "attacking":
-            # Check if target still exists and is valid
-            # Ensure move_target is a Unit in attack state
-            if not isinstance(self.move_target, Unit) or self.move_target.hp <= 0:
-                self.set_state("idle")
-                self.move_target = None
-                self.current_attack_cooldown = 0.0 # Reset cooldown
-                return attack_effect_generated
-
-            # Check distance to target
-            target_x, target_y = self.move_target.world_x, self.move_target.world_y
-            vector_x = target_x - self.world_x
-            vector_y = target_y - self.world_y
-            distance = math.hypot(vector_x, vector_y)
-
-            if distance > self.attack_range:
-                # Target moved out of range, go back to moving state
-                self.set_state("moving") # Re-enter moving state to chase
-                self.current_attack_cooldown = 0.0 # Reset cooldown if stopped attacking
-            else:
-                # Target in range, handle attack cooldown
-                self.current_attack_cooldown -= dt
-                if self.current_attack_cooldown <= 0:
-                    # Attack!
-                    # Apply damage
-                    self.move_target.take_damage(self.attack_power)
-                    # Create and store the visual effect for return
-                    attack_color = BLUE if self.type == 'friendly' else RED
-                    start_pos = (self.draw_x, self.draw_y)
-                    end_pos = (self.move_target.draw_x, self.move_target.draw_y)
-                    attack_effect_generated = AttackEffect(start_pos, end_pos, color=attack_color, duration=0.15)
-                    # Reset cooldown
-                    self.current_attack_cooldown = self.attack_cooldown
+            attack_effect_generated = update_unit_attack(self, dt)
 
         return attack_effect_generated # Return effect if created, else None
 
-    def set_target(self, target: Unit) -> None:
-        """Set an enemy unit as the target for movement/attack.
+    def attack(self, target: Unit) -> None:
+        """Command the unit to attack another unit.
 
         Args:
             target (Unit): The enemy unit to target.
@@ -304,10 +274,19 @@ class Unit:
         self.move_target = (x, y)
         self.set_state("moving") # Start moving towards the point
 
-    def take_damage(self, amount: int) -> None:
-        """Reduce HP by the given amount and check for destruction."""
+    def take_damage(self, amount: int, attacker=None) -> None:
+        """Reduce HP by the given amount and check for destruction.
+        
+        Args:
+            amount (int): The amount of damage to apply
+            attacker (Unit, optional): The unit that caused the damage, if any
+        """
         self.hp -= amount
-        print(f"DEBUG take_damage: Unit {id(self)} took {amount} damage. New HP: {self.hp}") # DEBUG
+        if attacker:
+            print(f"DEBUG take_damage: Unit {id(self)} took {amount} damage from {id(attacker)}. New HP: {self.hp}") # DEBUG
+        else:
+            print(f"DEBUG take_damage: Unit {id(self)} took {amount} damage. New HP: {self.hp}") # DEBUG
+            
         if self.hp <= 0:
             self.hp = 0
             print(f"DEBUG take_damage: Unit {id(self)} HP <= 0. Setting state to destroyed.") # DEBUG
@@ -338,6 +317,19 @@ class Unit:
         self.move_target_pos = target_pos
         self.move_target = None # Clear attack target when moving to point
         self.set_state("moving") # Use set_state
+        
+    def set_target(self, target_unit: 'Unit') -> None:
+        """Set a target unit to attack or follow.
+        
+        This is used by the game's AI system to make units engage with targets.
+        Enemy units use this to chase friendly units, and friendly units use this
+        to engage enemy units when not directly controlled by the player.
+        
+        Args:
+            target_unit: The Unit to target
+        """
+        if target_unit and target_unit.hp > 0:
+            self.attack(target_unit)
 
 class FriendlyUnit(Unit):
     def __init__(self, world_x: int, world_y: int):

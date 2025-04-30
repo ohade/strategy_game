@@ -1,13 +1,14 @@
 """Tests for the InputHandler module/class."""
 
-import pytest
-import pygame
 from unittest.mock import MagicMock, patch
+
+import pygame
+import pytest
+
 from camera import Camera
 from input_handler import InputHandler
 from units import Unit
-from ui import UnitInfoPanel
-from effects import DestinationIndicator
+
 
 class MockInfoPanel:
     """Minimal mock for UI panel."""
@@ -36,6 +37,7 @@ def game_state():
                                                   int(mock_unit1.world_y) - mock_unit1.radius,
                                                   mock_unit1.radius * 2, mock_unit1.radius * 2)
     mock_unit1.unit_type = 'friendly' # Add unit_type
+    mock_unit1.type = 'friendly' # Add type attribute to match Unit class
 
     mock_unit2 = MagicMock(spec=Unit)
     mock_unit2.id = 2
@@ -46,6 +48,7 @@ def game_state():
                                                   int(mock_unit2.world_y) - mock_unit2.radius,
                                                   mock_unit2.radius * 2, mock_unit2.radius * 2)
     mock_unit2.unit_type = 'friendly' # Add unit_type
+    mock_unit2.type = 'friendly' # Add type attribute to match Unit class
     
     # Add a mock enemy unit
     mock_enemy_unit = MagicMock(spec=Unit)
@@ -56,7 +59,8 @@ def game_state():
     mock_enemy_unit.get_rect.return_value = pygame.Rect(int(mock_enemy_unit.world_x) - mock_enemy_unit.radius,
                                                       int(mock_enemy_unit.world_y) - mock_enemy_unit.radius,
                                                       mock_enemy_unit.radius * 2, mock_enemy_unit.radius * 2)
-    mock_enemy_unit.unit_type = 'enemy' # Set type to enemy
+    mock_enemy_unit.unit_type = 'enemy' # Set unit_type to enemy
+    mock_enemy_unit.type = 'enemy' # Add type attribute to match Unit class
     mock_enemy_unit.move_to_point = MagicMock() # Ensure mock method exists for spec check
 
     state = {

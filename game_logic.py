@@ -1,7 +1,11 @@
 """Module for handling core game logic and state updates."""
 
 import math
-from typing import List, Tuple, Optional, Union, Any
+from typing import List, Optional, Any, Tuple
+
+# These will be used for attack effect color
+BLUE = (0, 0, 255)
+RED = (255, 0, 0)
 
 
 def update_unit_movement(unit, dt: float) -> None:
@@ -76,7 +80,7 @@ def update_targeting(unit, friendly_units: List[Any], enemy_units: List[Any]) ->
         enemy_units: List of enemy units
     """
     # Skip if unit is not idle
-    if not hasattr(unit, 'state') or unit.state != "idle":
+    if unit.state != "idle":
         return
         
     # Determine appropriate targets based on unit type
@@ -92,3 +96,93 @@ def update_targeting(unit, friendly_units: List[Any], enemy_units: List[Any]) ->
     # If a target was found, set it as the unit's target
     if closest_target and hasattr(unit, 'set_target'):
         unit.set_target(closest_target)
+
+
+def check_attack_range(attacker: Any, target: Any) -> bool:
+    """Check if target is within attacker's attack range.
+    
+    Args:
+        attacker: The attacking unit (must have world_x, world_y, and attack_range attributes)
+        target: The target unit (must have world_x and world_y attributes)
+        
+    Returns:
+        bool: True if target is within attack range, False otherwise
+    """
+    if not hasattr(attacker, 'attack_range'):
+        return False
+        
+    distance = math.hypot(target.world_x - attacker.world_x, 
+                          target.world_y - attacker.world_y)
+    return distance <= attacker.attack_range
+
+
+def perform_attack(attacker: Any, target: Any, dt: float) -> Optional[Any]:
+    """Perform an attack from one unit to another, applying damage and generating effects.
+    
+    Args:
+        attacker: The attacking unit (must have attack_power, attack_cooldown attributes)
+        target: The target unit (must have take_damage method)
+        dt: Delta time in seconds
+        
+    Returns:
+        Optional[AttackEffect]: An attack effect if generated, None otherwise
+    """
+    from effects import AttackEffect  # Import here to avoid circular imports
+    
+    # Reset attacker's cooldown
+    attacker.current_attack_cooldown = attacker.attack_cooldown
+    
+    # Apply damage to target
+    target.take_damage(attacker.attack_power, attacker)
+    
+    # Create visual effect
+    attack_color = BLUE if attacker.type == 'friendly' else RED
+    start_pos = (attacker.draw_x, attacker.draw_y)
+    end_pos = (target.draw_x, target.draw_y)
+    
+    return AttackEffect(start_pos, end_pos, color=attack_color, duration=0.15)
+
+
+def update_unit_attack(unit: Any, dt: float) -> Optional[Any]:
+    """Update unit's attack state, handling target validity, range, cooldown, and attacks.
+    
+    Args:
+        unit: The unit to update attack for (must have state, move_target attributes)
+        dt: Delta time in seconds
+        
+    Returns:
+        Optional[AttackEffect]: An attack effect if one was generated, None otherwise
+    """
+    # Only process units in attacking state
+    if not hasattr(unit, 'state') or unit.state != "attacking":
+        return None
+        
+    # Make sure target exists and is a valid unit
+    if not hasattr(unit, 'move_target') or unit.move_target is None:
+        unit.state = "idle"
+        return None
+        
+    target = unit.move_target
+    
+    # Check if target has been destroyed
+    if hasattr(target, 'hp') and target.hp <= 0:
+        unit.state = "idle"
+        unit.move_target = None
+        unit.current_attack_cooldown = 0.0  # Reset cooldown
+        return None
+        
+    # Check if target is in range
+    if not check_attack_range(unit, target):
+        # Target out of range, start chasing
+        unit.state = "moving"
+        unit.current_attack_cooldown = 0.0  # Reset cooldown
+        return None
+        
+    # Target in range, handle cooldown
+    unit.current_attack_cooldown -= dt
+    
+    # Ready to attack
+    if unit.current_attack_cooldown <= 0:
+        return perform_attack(unit, target, dt)
+        
+    return None

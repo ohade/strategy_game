@@ -29,11 +29,12 @@ Refactor `main.py` to improve modularity, readability, and maintainability by ex
     - [x] Extract unit movement logic from `main.py` into `game_logic.py`.
     - [x] Refactor `main.py` to call the new game logic functions for movement.
     - [x] Run movement tests and ensure they pass.
-- [ ] **Targeting/Attack Logic:** (Placeholder)
-    - [ ] Define tests.
-    - [ ] Extract logic.
-    - [ ] Refactor `main.py`.
-    - [ ] Run tests.
+- [x] **Targeting/Attack Logic:**
+    - [x] Define tests for targeting and attack logic in `tests/test_game_logic.py` and `tests/test_units.py`.
+    - [x] Extract attack logic into `game_logic.py` (check_attack_range, perform_attack, update_unit_attack).
+    - [x] Add missing Unit.set_target method for enemy AI targeting.
+    - [x] Refactor `main.py` to use the new game logic functions for targeting and attacks.
+    - [x] Run tests and ensure all pass.
 - [ ] **Effect Updates:** (Placeholder)
     - [ ] Define tests.
     - [ ] Extract logic.
