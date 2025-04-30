@@ -49,8 +49,8 @@ def main() -> None:
         Unit(800, 400, 'enemy'),
         Unit(900, 500, 'enemy'),
         Unit(800, 400, 'enemy'),
-        Unit(900, 500, 'enemy'),
-        Unit(850, 450, 'enemy')
+        # Unit(900, 500, 'enemy'),
+        # Unit(850, 450, 'enemy')
     ]
     all_units: list[Unit] = friendly_units + enemy_units
 
