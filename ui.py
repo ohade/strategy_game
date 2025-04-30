@@ -116,7 +116,7 @@ class UnitInfoPanel:
     def draw_single_unit_details(self, surface: pygame.Surface, unit: Unit, x_offset: int, y_offset: int) -> None:
         """Draw details for a single selected unit."""
         # Health
-        health_text = f"HP: {unit.hp}/{unit.max_hp}"
+        health_text = f"HP: {unit.hp}/{unit.hp_max}"
         health_surface = self.info_font.render(health_text, True, self.health_text_color)
         surface.blit(health_surface, (x_offset, y_offset))
         
@@ -139,7 +139,7 @@ class UnitInfoPanel:
         """Draw summary information for multiple selected units (collapsed view)."""
         # Calculate average HP
         total_hp = sum(unit.hp for unit in units)
-        max_total_hp = sum(unit.max_hp for unit in units)
+        max_total_hp = sum(unit.hp_max for unit in units)
         avg_hp_percent = int((total_hp / max_total_hp) * 100) if max_total_hp > 0 else 0
         
         health_text = f"Avg Health: {avg_hp_percent}%"
@@ -189,7 +189,7 @@ class UnitInfoPanel:
             # current_y += 20 # Add space after unit number
             
             # Health (reuse single unit logic/colors)
-            health_text = f"HP: {unit.hp}/{unit.max_hp}"
+            health_text = f"HP: {unit.hp}/{unit.hp_max}"
             health_surface = self.info_font.render(health_text, True, self.health_text_color)
             surface.blit(health_surface, (x_offset + col_offsets['hp'], current_y))
             

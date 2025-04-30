@@ -44,8 +44,9 @@ class Unit:
         self.move_target = None  # Can be a point (tuple) or another Unit
         self.attack_target = None
         self.attack_range = attack_range
-        self.cooldown = 0
-        self.cooldown_max = 1.0  # 1 second between attacks
+        self.current_attack_cooldown = 0
+        self.attack_cooldown = 1.0  # 1 second between attacks
+        self.attack_power = 20  # Damage dealt per attack
         self.hp = hp
         self.hp_max = 100
         
@@ -71,6 +72,7 @@ class Unit:
         # Visual effects
         self.flare_flicker = 1.0
         self.current_attack_cooldown: float = 0.0 # Time until next attack is ready
+        self.selected = False # For player selection indication
 
     def draw(self, surface: pygame.Surface, camera: Camera) -> None:
         """Draw the unit onto the screen, adjusted by camera view.
@@ -169,13 +171,13 @@ class Unit:
             pygame.draw.polygon(surface, WHITE, rotated_points, 2) # Use thickness 2 for outline
 
         # Draw health bar if not at max HP
-        if self.hp < self.max_hp:
+        if self.hp < self.hp_max:
             bar_width = self.radius * 2
             bar_height = 4
             bar_x = screen_pos[0] - self.radius
             bar_y = screen_pos[1] - self.radius - bar_height - 2 # Position above the unit
 
-            health_percentage = self.hp / self.max_hp
+            health_percentage = self.hp / self.hp_max
             current_bar_width = int(bar_width * health_percentage)
 
             # Background rect
