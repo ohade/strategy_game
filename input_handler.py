@@ -1,11 +1,12 @@
 """Handles user input (mouse, keyboard) for the game."""
 
-from typing import List, Tuple, Dict, Optional
-
+from typing import List, Tuple, Dict, Any, Optional
 import pygame
 
 from camera import Camera
+from constants import *
 from effects import DestinationIndicator
+from game_logic import find_enemies_in_radius, get_closest_enemy_to_point
 from ui import UnitInfoPanel
 from units import Unit
 
@@ -116,15 +117,19 @@ class InputHandler:
                     target_world_x, target_world_y = camera.screen_to_world_coords(click_screen_pos[0], click_screen_pos[1])
                     destination_indicators.clear() # Clear previous indicators
                     
-                    # Check if clicking on an enemy unit first
-                    clicked_enemy = None
-                    for unit in all_units:
-                        if unit.type == 'enemy':
-                            world_rect = unit.get_rect()
-                            unit_screen_rect = camera.apply(world_rect)
-                            if unit_screen_rect.collidepoint(click_screen_pos):
-                                clicked_enemy = unit
-                                break
+                    # Check for enemies near the click point using smart targeting
+                    # Convert screen click to world coordinates for targeting
+                    
+                    # Define targeting radius (adjust as needed for gameplay balance)
+                    TARGETING_RADIUS = 50
+                    
+                    # Find enemies within the targeting radius
+                    enemy_units = [unit for unit in all_units if unit.type == 'enemy']
+                    target_world_pos = (target_world_x, target_world_y)
+                    nearby_enemies = find_enemies_in_radius(target_world_pos, enemy_units, TARGETING_RADIUS)
+                    
+                    # Get the closest enemy if any were found
+                    clicked_enemy = get_closest_enemy_to_point(target_world_pos, nearby_enemies) if nearby_enemies else None
                     
                     for i, unit in enumerate(selected_units):
                         # Ensure only friendly units receive commands

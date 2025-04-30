@@ -6,7 +6,7 @@ from background import Background
 from camera import Camera
 from constants import *  # Import all constants
 from effects import DestinationIndicator, ExplosionEffect  # Import the effect classes
-from game_logic import update_targeting
+from game_logic import update_targeting, update_effects, detect_unit_collision, resolve_unit_collision
 from input_handler import InputHandler  # Import the new handler
 from ui import UnitInfoPanel
 from units import Unit
@@ -99,19 +99,11 @@ def main() -> None:
         camera.update(dt, keys) # Update camera based on key presses and dt
         
         # --- Update Effects ---
-        # Update and remove finished effects
-        effects_to_remove = []
-        for effect in effects:
-            effect.update(dt)
-            if hasattr(effect, 'is_finished') and effect.is_finished(): # Check if effect is done
-                effects_to_remove.append(effect)
-        for effect in effects_to_remove:
-            effects.remove(effect)
+        # Use game_logic.update_effects to update and clean up expired effects
+        effects = update_effects(effects, dt)
 
         # --- Update Destination Indicators ---
-        destination_indicators = [ind for ind in destination_indicators if ind.is_alive()]
-        for indicator in destination_indicators:
-            indicator.update(dt)
+        destination_indicators = update_effects(destination_indicators, dt)
         
         # --- Update Units --- 
         units_to_remove = []
@@ -127,10 +119,15 @@ def main() -> None:
                 # Check if unit's HP dropped to zero or below AFTER update
                 if unit_other.hp <= 0:
                     print(f"DEBUG: Condition unit.hp <= 0 met for unit {id(unit_other)}. Adding to removal list.") # DEBUG
-                    units_to_remove.append(unit_other)
-                    # Trigger explosion effect
-                    explosion = ExplosionEffect(unit_other.world_x, unit_other.world_y)
-                    effects.append(explosion)
+                    if unit_other not in units_to_remove:
+                        units_to_remove.append(unit_other)
+        
+        # --- Handle Unit Collisions ---
+        # Detect and resolve collisions between all units to prevent overlap
+        for i, unit1 in enumerate(all_units):
+            for unit2 in all_units[i+1:]:  # Only check each pair once
+                if detect_unit_collision(unit1, unit2):
+                    resolve_unit_collision(unit1, unit2)
  
          # Remove destroyed units
         if units_to_remove:

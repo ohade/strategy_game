@@ -35,11 +35,11 @@ Refactor `main.py` to improve modularity, readability, and maintainability by ex
     - [x] Add missing Unit.set_target method for enemy AI targeting.
     - [x] Refactor `main.py` to use the new game logic functions for targeting and attacks.
     - [x] Run tests and ensure all pass.
-- [ ] **Effect Updates:** (Placeholder)
-    - [ ] Define tests.
-    - [ ] Extract logic.
-    - [ ] Refactor `main.py`.
-    - [ ] Run tests.
+- [x] **Effect Updates:**
+    - [x] Define tests for effect updates in `tests/test_effect_updates.py`.
+    - [x] Extract effect update logic into `game_logic.py` (update_effects function).
+    - [x] Refactor `main.py` to use the new game logic function for effect updates.
+    - [x] Run tests and ensure all pass.
 
 ### Phase 4: Rendering / Drawing
 - [ ] Write tests for rendering logic (where feasible, e.g., minimap calculations) (`tests/test_renderer.py`).
@@ -58,3 +58,39 @@ Refactor `main.py` to improve modularity, readability, and maintainability by ex
 
 - [x] **Player Control:** Prevent player from selecting or commanding enemy units.
 - [x] **Friendly Fire:** Prevent units from targeting or attacking units of the same type (friendly vs. friendly, enemy vs. enemy).
+- [ ] **Background Rendering:** Background does not cover the entire map area, leaving empty spaces at the edges when zoomed out or panned.
+
+## Feature Enhancements
+
+### Phase 6: Unit Collision and Smart Targeting
+- [ ] **Unit Collision:**
+    - [x] Write tests for unit collision detection and handling.
+    - [x] Implement collision detection system to prevent units from occupying the same space.
+    - [x] Create unit separation behavior to realistically handle collisions.
+    - [x] Run tests and ensure they pass.
+    
+- [ ] **Smart Targeting:**
+    - [x] Write tests for improved targeting logic with radius-based selection.
+    - [x] Implement configurable radius targeting to detect enemy units near click location.
+    - [x] Add "lock-on" functionality to prioritize enemy ships within targeting radius.
+    - [x] Update input handler to properly interpret player intent when clicking near enemies.
+    - [x] Run tests and ensure they pass.
+
+### Phase 7: Realistic Movement and Visual Improvements
+- [ ] **Realistic Unit Movement:**
+    - [ ] Write tests for gradual rotation and movement physics.
+    - [ ] Implement rotation mechanics so units turn realistically when changing direction.
+    - [ ] Add momentum/inertia to unit movement for more natural motion.
+    - [ ] Create smooth transitions between movement states.
+    - [ ] Run tests and ensure they pass.
+    
+- [ ] **Visual Assets Integration:**
+    - [ ] Create an assets module to handle loading and managing visual assets.
+    - [ ] Design or source appropriate ship/unit graphics.
+    - [ ] Implement sprite/image rendering to replace geometric shapes.
+    - [ ] Add rotation and animation support for sprites.
+    - [ ] Create visual feedback for different unit states (moving, attacking, damaged).
+    - [ ] Update rendering to properly handle new visual assets.
+    - [ ] Enhanced space background with images of planets, nebulae, and comets.
+    - [ ] Implement parallax scrolling for multi-layered background effects.
+    - [ ] Run tests and ensure the game looks and performs well with new assets.
