@@ -3,7 +3,8 @@ import pygame
 import math
 import collections
 import random
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, List
+from dataclasses import dataclass, field
 from effects import AttackEffect # Import the new effect class
 from game_logic import update_unit_attack, smooth_movement
 from camera import Camera
@@ -19,60 +20,60 @@ BLUE = (0, 0, 255) # Example friendly attack color
 ORANGE = (255, 165, 0)
 YELLOW = (255, 255, 0)
 
+@dataclass
 class Unit:
     """Represents a single game unit (friendly or enemy)."""
-
-    def __init__(self, world_x, world_y, unit_type, hp=100, attack_range=150):
-        """
-        Initialize a new unit.
-        
-        Args:
-            world_x (float): X position in world coordinates.
-            world_y (float): Y position in world coordinates.
-            unit_type (str): Type of unit ("friendly" or "enemy").
-            hp (int): Health points for this unit.
-            attack_range (int): Attack range in world units.
-        """
-        self.world_x = world_x
-        self.world_y = world_y
-        self.color = GREEN if unit_type == "friendly" else RED
-        self.unit_type = unit_type  # Used for rendering and logic
-        self.type = unit_type       # Used for targeting and command logic
-        self.radius = 15
-        self.speed = 100
-        self.state = "idle"  # idle, moving, attacking, destroyed
-        self.move_target = None  # Can be a point (tuple) or another Unit
-        self.attack_target = None
-        self.attack_range = attack_range
-        self.current_attack_cooldown = 0
-        self.attack_cooldown = 1.0  # 1 second between attacks
-        self.attack_power = 20  # Damage dealt per attack
-        self.hp = hp
-        self.hp_max = 100
-        
-        # Physics-based movement attributes
-        self.rotation = 0  # Current angle in degrees (0-360)
-        self.velocity_x = 0
-        self.velocity_y = 0
-        self.max_speed = 100
-        self.acceleration = 200
-        self.max_rotation_speed = 180  # degrees per second
-        
-        # Visual interpolation
-        self.draw_x = world_x
-        self.draw_y = world_y
-        self.last_draw_x = world_x
-        self.last_draw_y = world_y
-        
-        # Trail positions (for visual effect)
-        self.trail_positions = []
-        self.max_trail_length = 15
-        self.min_trail_dist_sq = 100  # Minimum squared distance to create a new trail point
-        
-        # Visual effects
-        self.flare_flicker = 1.0
-        self.current_attack_cooldown: float = 0.0 # Time until next attack is ready
-        self.selected = False # For player selection indication
+    # World position and basic properties
+    world_x: float  # X position in world coordinates
+    world_y: float  # Y position in world coordinates
+    unit_type: str  # Type of unit ("friendly" or "enemy")
+    type: str = field(init=False)  # Synonym for unit_type, used for targeting and command logic
+    color: Tuple[int, int, int] = field(init=False)  # RGB color based on unit type
+    hp: int = 100
+    hp_max: int = 100
+    radius: int = 15
+    
+    # Combat attributes
+    attack_range: int = 150
+    attack_power: int = 20  # Damage dealt per attack
+    attack_cooldown: float = 1.0  # 1 second between attacks
+    current_attack_cooldown: float = 0.0  # Time until next attack is ready
+    attack_target: Optional[Unit] = None
+    
+    # Movement attributes
+    speed: int = 100
+    state: str = "idle"  # idle, moving, attacking, destroyed
+    move_target: Optional[Union[Tuple[float, float], Unit]] = None
+    
+    # Physics-based movement attributes
+    rotation: float = 0  # Current angle in degrees (0-360)
+    velocity_x: float = 0
+    velocity_y: float = 0
+    max_speed: float = 100
+    acceleration: float = 200
+    max_rotation_speed: float = 180  # degrees per second
+    
+    # Visual interpolation
+    draw_x: float = field(init=False)
+    draw_y: float = field(init=False)
+    last_draw_x: float = field(init=False)
+    last_draw_y: float = field(init=False)
+    
+    # Visual effects
+    trail_positions: List[Tuple[int, int]] = field(default_factory=list)
+    max_trail_length: int = 15
+    min_trail_dist_sq: int = 100  # Minimum squared distance to create a new trail point
+    flare_flicker: float = 1.0
+    selected: bool = False  # For player selection indication
+    
+    def __post_init__(self) -> None:
+        """Initialize derived attributes after dataclass initialization."""
+        self.type = self.unit_type
+        self.color = GREEN if self.unit_type == "friendly" else RED
+        self.draw_x = self.world_x
+        self.draw_y = self.world_y
+        self.last_draw_x = self.world_x
+        self.last_draw_y = self.world_y
 
     def draw(self, surface: pygame.Surface, camera: Camera) -> None:
         """Draw the unit onto the screen, adjusted by camera view.
@@ -288,7 +289,7 @@ class Unit:
         self.move_target = (x, y)
         self.set_state("moving") # Start moving towards the point
 
-    def take_damage(self, amount: int, attacker=None) -> None:
+    def take_damage(self, amount: int, attacker: Optional['Unit'] = None) -> None:
         """Reduce HP by the given amount and check for destruction.
         
         Args:
