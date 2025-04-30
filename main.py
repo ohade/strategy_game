@@ -5,7 +5,7 @@ import pygame
 from background import Background
 from camera import Camera
 from constants import *  # Import all constants
-from effects import DestinationIndicator, ExplosionEffect  # Import the effect classes
+from effects import DestinationIndicator  # Import the effect classes
 from game_logic import update_targeting, update_effects, detect_unit_collision, resolve_unit_collision
 from input_handler import InputHandler  # Import the new handler
 from ui import UnitInfoPanel

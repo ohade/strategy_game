@@ -4,7 +4,6 @@ from typing import List, Tuple, Dict, Any, Optional
 import pygame
 
 from camera import Camera
-from constants import *
 from effects import DestinationIndicator
 from game_logic import find_enemies_in_radius, get_closest_enemy_to_point
 from ui import UnitInfoPanel

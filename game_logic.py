@@ -1,8 +1,7 @@
 """Module for handling core game logic and state updates."""
 
-from typing import List, Dict, Any, Tuple, Optional, Callable
-import pygame
 import math
+from typing import List, Any, Tuple, Optional
 
 # These will be used for attack effect color
 BLUE = (0, 0, 255)
