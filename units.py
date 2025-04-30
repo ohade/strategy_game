@@ -2,6 +2,7 @@ from __future__ import annotations
 import pygame
 import math
 import collections
+import random
 from camera import Camera
 from typing import Optional, Tuple, Union
 from effects import AttackEffect # Import the new effect class
@@ -14,6 +15,8 @@ HEALTH_BAR_RED = (200, 0, 0)
 HEALTH_BAR_GREEN = (0, 200, 0)
 HEALTH_BAR_BACK = (50, 50, 50)
 BLUE = (0, 0, 255) # Example friendly attack color
+ORANGE = (255, 165, 0)
+YELLOW = (255, 255, 0)
 
 class Unit:
     """Represents a single game unit (friendly or enemy)."""
@@ -60,6 +63,10 @@ class Unit:
         self.attack_cooldown = attack_cooldown
         self.current_attack_cooldown: float = 0.0 # Time until next attack is ready
 
+        # Visuals
+        self.angle: float = 0.0 # Angle in radians for orientation
+        self.flare_flicker: float = 1.0 # For engine flare effect
+
     def draw(self, surface: pygame.Surface, camera: Camera) -> None:
         """Draw the unit onto the screen, adjusted by camera view.
 
@@ -70,32 +77,85 @@ class Unit:
         # Use interpolated draw coordinates for rendering
         screen_pos = camera.apply_coords(int(self.draw_x), int(self.draw_y))
 
-        # --- Draw Trail --- 
+        # --- Draw Engine Flare (Modified Trail) --- 
         if self.state == "moving":
-            max_len = float(len(self.trail_positions))
-            if max_len > 0:
-                for i, pos in enumerate(reversed(self.trail_positions)): # Draw newest first
-                    # Calculate alpha and size based on age (i)
-                    progress = (i + 1) / max_len # Normalized position in trail (0 to 1)
-                    alpha = int(progress * 100) + 20 # Fade out (e.g., 20 to 120 alpha)
-                    size = int(progress * (self.radius * 0.6)) + 1 # Shrink (e.g., 1 to 60% radius)
-                    
-                    if size > 0:
-                        trail_screen_pos = camera.apply_coords(pos[0], pos[1])
-                        # Create a temporary surface for alpha blending
-                        trail_surf = pygame.Surface((size*2, size*2), pygame.SRCALPHA)
-                        trail_color = (*self.color[:3], alpha) # Use unit color with calculated alpha
-                        pygame.draw.circle(trail_surf, trail_color, (size, size), size)
-                        surface.blit(trail_surf, (trail_screen_pos[0] - size, trail_screen_pos[1] - size))
+            # Calculate the back position of the ship based on angle
+            back_offset_x = -self.radius * math.cos(self.angle)
+            back_offset_y = -self.radius * math.sin(self.angle)
+            flare_base_x = self.draw_x + back_offset_x
+            flare_base_y = self.draw_y + back_offset_y
+            
+            num_flares = random.randint(2, 4) # Draw a few flickering particles
+            for _ in range(num_flares):
+                # Vary size and position slightly
+                flicker_size = self.radius * 0.5 * self.flare_flicker * random.uniform(0.7, 1.3)
+                flicker_offset_angle = self.angle + random.uniform(-0.3, 0.3) # Slight angle variation
+                flicker_dist = self.radius * random.uniform(0.1, 0.5) # Distance behind ship
+                
+                flare_center_x = flare_base_x - flicker_dist * math.cos(self.angle)
+                flare_center_y = flare_base_y - flicker_dist * math.sin(self.angle)
+                
+                flare_screen_pos = camera.apply_coords(int(flare_center_x), int(flare_center_y))
+                
+                if flicker_size >= 1:
+                    # Choose color randomly between yellow and orange
+                    flare_color = random.choice([YELLOW, ORANGE]) 
+                    alpha = random.randint(150, 255) # Random alpha
+                    final_color = (*flare_color, alpha)
+
+                    # Draw small flare polygon (e.g., triangle)
+                    flare_points = [
+                        (0, -flicker_size * 0.8), # Tip
+                        (-flicker_size * 0.5, flicker_size * 0.5),
+                        (flicker_size * 0.5, flicker_size * 0.5)
+                    ]
+                    # Rotate flare points
+                    rotated_flare_points = []
+                    flare_angle = self.angle + math.pi # Point flare backwards
+                    cos_a = math.cos(flare_angle)
+                    sin_a = math.sin(flare_angle)
+                    for px, py in flare_points:
+                        rot_x = px * cos_a - py * sin_a
+                        rot_y = px * sin_a + py * cos_a
+                        rotated_flare_points.append((flare_screen_pos[0] + rot_x, flare_screen_pos[1] + rot_y))
                         
-        # --- End Draw Trail --- 
-        
-        # Draw the main unit circle
-        pygame.draw.circle(surface, self.color, screen_pos, self.radius)
+                    # Draw on temp surface for alpha
+                    min_x = min(p[0] for p in rotated_flare_points)
+                    max_x = max(p[0] for p in rotated_flare_points)
+                    min_y = min(p[1] for p in rotated_flare_points)
+                    max_y = max(p[1] for p in rotated_flare_points)
+                    width = max(1, int(max_x - min_x))
+                    height = max(1, int(max_y - min_y))
+                    
+                    temp_surf = pygame.Surface((width, height), pygame.SRCALPHA)
+                    local_points = [(p[0] - min_x, p[1] - min_y) for p in rotated_flare_points]
+                    pygame.draw.polygon(temp_surf, final_color, local_points)
+                    surface.blit(temp_surf, (min_x, min_y))
+
+        # --- Draw Main Unit Shape (Triangle) --- 
+        # Define base points for an arrowhead/triangle pointing right (0 radians)
+        # Scaled by radius
+        p1 = (self.radius, 0) # Nose
+        p2 = (-self.radius * 0.8, self.radius * 0.7) # Back left wing
+        p3 = (-self.radius * 0.8, -self.radius * 0.7) # Back right wing
+        base_points = [p1, p2, p3]
+
+        # Rotate points based on self.angle
+        cos_a = math.cos(self.angle)
+        sin_a = math.sin(self.angle)
+        rotated_points = []
+        for x, y in base_points:
+            rotated_x = x * cos_a - y * sin_a
+            rotated_y = x * sin_a + y * cos_a
+            rotated_points.append((screen_pos[0] + rotated_x, screen_pos[1] + rotated_y))
+
+        # Draw the polygon
+        pygame.draw.polygon(surface, self.color, rotated_points)
 
         # Draw selection indicator if selected
         if self.selected:
-            pygame.draw.circle(surface, WHITE, screen_pos, self.radius + 2, 1) # Draw white outline
+            # Draw outline around the polygon
+            pygame.draw.polygon(surface, WHITE, rotated_points, 2) # Use thickness 2 for outline
 
         # Draw health bar if not at max HP
         if self.hp < self.max_hp:
@@ -125,78 +185,67 @@ class Unit:
         
         # --- Smooth Movement Interpolation --- 
         # Move draw coordinates towards logical world coordinates
-        lerp_factor = 10.0 * dt # Adjust this factor to control smoothness (higher = faster catch-up)
-        lerp_factor = min(lerp_factor, 1.0) # Clamp to 1.0 to prevent overshooting
-
-        # Store pre-interpolation position
-        prev_draw_x, prev_draw_y = self.draw_x, self.draw_y
-        
+        lerp_factor = min(1.0, dt * 10) # Adjust lerp speed as needed
         self.draw_x += (self.world_x - self.draw_x) * lerp_factor
         self.draw_y += (self.world_y - self.draw_y) * lerp_factor
-        # --- End Smooth Movement --- 
+        
+        # Update trail
+        if self.state == "moving":
+            dist_sq = (self.draw_x - self.last_draw_x)**2 + (self.draw_y - self.last_draw_y)**2
+            if dist_sq > self.min_trail_dist_sq:
+                 self.trail_positions.append((int(self.last_draw_x), int(self.last_draw_y))) # Store previous int position
+                 self.last_draw_x = self.draw_x
+                 self.last_draw_y = self.draw_y
+                 
+        attack_effect_generated = None # Initialize return value
 
-        # --- Trail Update --- 
-        is_moving_state = self.state == "moving"
-
-        if is_moving_state:
-            # Append the position *before* the current interpolation step, every frame during move
-            self.trail_positions.append((int(prev_draw_x), int(prev_draw_y)))
-        elif len(self.trail_positions) > 0:
-            # Clear trail if not moving
-            self.trail_positions.clear()
-        # --- End Trail Update --- 
- 
-        # --- Movement Logic ---
-        if self.state == "moving" and self.move_target is not None:
-            target_x: float
-            target_y: float
-
-            # Determine target coordinates based on move_target type
+        # Movement logic
+        if self.state == "moving":
+            target_pos = None
             if isinstance(self.move_target, Unit):
-                # Check if target unit is still valid
-                if self.move_target.hp <= 0:
-                    self.move_target = None
+                # Target is another unit
+                if self.move_target.hp <= 0: # Check if target is destroyed
                     self.set_state("idle")
-                    return attack_effect_generated # Early exit if target gone
-                target_x, target_y = self.move_target.world_x, self.move_target.world_y
+                    self.move_target = None
+                else:
+                    target_pos = (self.move_target.world_x, self.move_target.world_y)
             elif isinstance(self.move_target, tuple):
-                target_x, target_y = self.move_target
-            else: # Should not happen, but good practice
-                 self.move_target = None
+                # Target is a point
+                target_pos = self.move_target
+
+            if target_pos:
+                vector_x = target_pos[0] - self.world_x
+                vector_y = target_pos[1] - self.world_y
+                distance = math.hypot(vector_x, vector_y)
+                
+                # Update angle based on movement direction
+                self.angle = math.atan2(vector_y, vector_x)
+                # Update flare flicker
+                self.flare_flicker = 1.0 + random.uniform(-0.3, 0.3)
+
+                # Check proximity for state change
+                stop_distance = 0
+                if isinstance(self.move_target, Unit):
+                    stop_distance = self.attack_range - 5 # Stop slightly before attack range
+
+                if distance <= stop_distance and isinstance(self.move_target, Unit):
+                    # Reached attack target
+                    self.set_state("attacking")
+                elif distance < 5: # Close enough to point target
+                    self.set_state("idle")
+                    self.move_target = None
+                else:
+                    # Move towards target
+                    move_vector_x = (vector_x / distance) * self.speed * dt
+                    move_vector_y = (vector_y / distance) * self.speed * dt
+                    self.world_x += move_vector_x
+                    self.world_y += move_vector_y
+            else:
+                 # No valid target position, become idle
                  self.set_state("idle")
-                 return attack_effect_generated # Early exit
 
-            vector_x = target_x - self.world_x
-            vector_y = target_y - self.world_y
-            distance = math.hypot(vector_x, vector_y)
-
-            # --- Check for arrival / state transition --- 
-            # 1. Target is a Unit: Check attack range
-            if isinstance(self.move_target, Unit):
-                if distance <= self.attack_range:
-                    # Target in range, attempt to transition to attacking
-                    # Keep the target for attack logic in the 'attacking' state
-                    self.set_state("attacking") 
-                    return attack_effect_generated # Don't move further this frame
-
-            # 2. Target is a Point: Check if close enough
-            elif isinstance(self.move_target, tuple):
-                if distance < 5: # Arrival threshold
-                    self.world_x, self.world_y = target_x, target_y # Snap to target
-                    self.move_target = None
-                    self.set_state("idle")
-                    return attack_effect_generated # Arrived, stop processing movement
-
-            # --- Apply Movement (if still moving) --- 
-            if distance > 0: # Avoid division by zero if already at target
-                # Normalize vector
-                vector_x /= distance
-                vector_y /= distance
-                # Move unit
-                self.world_x += vector_x * self.speed * dt
-                self.world_y += vector_y * self.speed * dt
-
-        elif self.state == "attacking":
+        # Attacking logic
+        if self.state == "attacking":
             # Check if target still exists and is valid
             # Ensure move_target is a Unit in attack state
             if not isinstance(self.move_target, Unit) or self.move_target.hp <= 0:
