@@ -1,6 +1,5 @@
 """Tests for constants defined in the game."""
 
-import pytest
 import constants # Import from the new constants module
 
 def test_screen_constants_exist_and_type():

@@ -1,8 +1,11 @@
 from __future__ import annotations
+
+from typing import List, Tuple
+
 import pygame
-from typing import List, Optional, Tuple
 
 from units import Unit
+
 
 class UnitInfoPanel:
     """Panel displaying information about currently selected units."""

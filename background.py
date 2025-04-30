@@ -66,7 +66,7 @@ class Background:
             # Clip lines to screen bounds if necessary
             screen_y1 = max(0, min(screen_y1, surface.get_height()))
             screen_y2 = max(0, min(screen_y2, surface.get_height()))
-            if screen_x1 >= 0 and screen_x1 < surface.get_width(): # Only draw if visible on screen X
+            if 0 <= screen_x1 < surface.get_width(): # Only draw if visible on screen X
                 pygame.draw.line(surface, (40, 40, 40), (screen_x1, screen_y1), (screen_x2, screen_y2), 1)
 
         # Draw horizontal lines
@@ -77,5 +77,5 @@ class Background:
             # Clip lines to screen bounds
             screen_x1 = max(0, min(screen_x1, surface.get_width()))
             screen_x2 = max(0, min(screen_x2, surface.get_width()))
-            if screen_y1 >= 0 and screen_y1 < surface.get_height(): # Only draw if visible on screen Y
+            if 0 <= screen_y1 < surface.get_height(): # Only draw if visible on screen Y
                 pygame.draw.line(surface, (40, 40, 40), (screen_x1, screen_y1), (screen_x2, screen_y2), 1)

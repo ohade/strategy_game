@@ -1,14 +1,16 @@
 import sys
-import math
+
 import pygame
-from camera import Camera
-from units import Unit
+
 from background import Background
+from camera import Camera
+from constants import *  # Import all constants
+from effects import DestinationIndicator, ExplosionEffect  # Import the effect classes
+from game_logic import update_targeting
+from input_handler import InputHandler  # Import the new handler
 from ui import UnitInfoPanel
-from effects import AttackEffect, DestinationIndicator, ExplosionEffect # Import the effect classes
-from constants import * # Import all constants
-from input_handler import InputHandler # Import the new handler
-from game_logic import update_unit_movement, update_targeting
+from units import Unit
+
 
 def main() -> None:
     """Main game function."""
