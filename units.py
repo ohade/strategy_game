@@ -287,7 +287,10 @@ class Unit:
         Args:
             target (Unit): The enemy unit to target.
         """
-        if target is not None and target.hp > 0 and target != self:
+        # Check target is not null, has health, is not this unit, and is of opposite type
+        if (target is not None and target.hp > 0 and target != self and 
+                ((self.type == 'friendly' and target.type == 'enemy') or 
+                 (self.type == 'enemy' and target.type == 'friendly'))):
             self.move_target = target
             self.set_state("moving") # Start moving towards the target
 

@@ -52,3 +52,8 @@ Refactor `main.py` to improve modularity, readability, and maintainability by ex
 - [ ] Add any necessary tests for the main loop orchestration.
 - [ ] Ensure all existing tests pass.
 - [ ] Run linters/formatters (`black`, `pylint`, `mypy`) if configured.
+
+## Bug Fixes
+
+- [x] **Player Control:** Prevent player from selecting or commanding enemy units.
+- [x] **Friendly Fire:** Prevent units from targeting or attacking units of the same type (friendly vs. friendly, enemy vs. enemy).

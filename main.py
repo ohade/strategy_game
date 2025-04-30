@@ -32,15 +32,24 @@ def main() -> None:
 
     # --- Create Units ---
     friendly_units: list[Unit] = [
-        Unit(300, 300, 'friendly'),
-        Unit(350, 350, 'friendly'),
-        Unit(350, 350, 'friendly'),
-        Unit(350, 350, 'friendly')
+        Unit(300, 300, 'friendly', attack_range=100),
+        Unit(350, 350, 'friendly', attack_range=100),
+        Unit(350, 350, 'friendly', attack_range=100),
+        Unit(300, 300, 'friendly', attack_range=100),
+        Unit(350, 350, 'friendly', attack_range=100),
+        Unit(350, 350, 'friendly', attack_range=100),
+        Unit(350, 350, 'friendly', attack_range=100)
     ]
     enemy_units: list[Unit] = [
-        Unit(800, 400, 'enemy')
-        # Unit(900, 500, 'enemy'),
-        # Unit(850, 450, 'enemy')
+        Unit(800, 400, 'enemy'),
+        Unit(900, 500, 'enemy'),
+        Unit(800, 400, 'enemy'),
+        Unit(900, 500, 'enemy'),
+        Unit(800, 400, 'enemy'),
+        Unit(900, 500, 'enemy'),
+        Unit(800, 400, 'enemy'),
+        Unit(900, 500, 'enemy'),
+        Unit(850, 450, 'enemy')
     ]
     all_units: list[Unit] = friendly_units + enemy_units
 
@@ -108,17 +117,30 @@ def main() -> None:
             if effect: # If unit update returned an effect (e.g., attack)
                 effects.append(effect)
 
-            # Basic AI for Enemies (example: attack nearest friendly if idle)
+            # Basic AI for Enemies and Friendlies (auto-target appropriate units when idle)
             if isinstance(unit, Unit) and unit.state == "idle":
-                closest_friendly = None
-                closest_distance = float('inf')
-                for friendly in friendly_units:
-                    distance = math.hypot(friendly.world_x - unit.world_x, friendly.world_y - unit.world_y)
-                    if distance < closest_distance:
-                        closest_friendly = friendly
-                        closest_distance = distance
-                if closest_friendly:
-                    unit.set_target(closest_friendly)
+                if unit.type == 'enemy':
+                    # Enemy units target closest friendly
+                    closest_target = None
+                    closest_distance = float('inf')
+                    for target in friendly_units:
+                        distance = math.hypot(target.world_x - unit.world_x, target.world_y - unit.world_y)
+                        if distance < closest_distance:
+                            closest_target = target
+                            closest_distance = distance
+                    if closest_target:
+                        unit.set_target(closest_target)
+                elif unit.type == 'friendly':
+                    # Friendly units target closest enemy
+                    closest_target = None
+                    closest_distance = float('inf')
+                    for target in enemy_units:
+                        distance = math.hypot(target.world_x - unit.world_x, target.world_y - unit.world_y)
+                        if distance < closest_distance:
+                            closest_target = target
+                            closest_distance = distance
+                    if closest_target:
+                        unit.set_target(closest_target)
 
             for unit_other in all_units:
                 # Check if unit's HP dropped to zero or below AFTER update

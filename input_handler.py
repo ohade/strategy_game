@@ -81,42 +81,41 @@ class InputHandler:
                     self.drag_current_pos = click_screen_pos # Initialize
 
                     mods = pygame.key.get_mods()
-                    add_to_selection = mods & pygame.KMOD_SHIFT
+                    shift_pressed = mods & pygame.KMOD_SHIFT
                     
                     clicked_on_unit = False
+                    newly_selected_units = []
                     for unit in all_units:
                         # Get world rect, then convert to screen rect using camera
                         world_rect = unit.get_rect()
                         unit_screen_rect = camera.apply(world_rect)
-                        if unit_screen_rect.collidepoint(click_screen_pos): # Use event pos for collision
+                        # Only consider friendly units for selection
+                        if unit.type == 'friendly' and unit_screen_rect.collidepoint(click_screen_pos):
                             clicked_on_unit = True
-                            if add_to_selection:
+                            # If shift is held, add to selection, otherwise select only this one
+                            if shift_pressed:
                                 if unit not in selected_units:
-                                    selected_units.append(unit)
-                                else:
-                                    # Shift-clicking an already selected unit deselects it
-                                    selected_units.remove(unit)
+                                    newly_selected_units.append(unit)
                             else:
                                 # Regular click: select only this unit
-                                selected_units.clear()
-                                selected_units.append(unit)
-                            break # Stop after finding the first unit under the click
+                                newly_selected_units = [unit]
+                    if newly_selected_units:
+                        if shift_pressed:
+                            selected_units.extend(newly_selected_units)
                         else:
-                            pass
-                            
-                    if not clicked_on_unit and not add_to_selection:
+                            selected_units = newly_selected_units
+
+                    if not clicked_on_unit and not shift_pressed:
                         selected_units.clear()
 
                 # --- Right Click ---    
-                elif event.button == 3: 
-                    if selected_units: # Only act if units are selected
-                        target_world_x, target_world_y = camera.screen_to_world_coords(*click_screen_pos) # Use event pos
-                        
-                        # Clear previous indicators for these units
-                        # More complex logic might be needed if multiple groups move
-                        destination_indicators.clear() 
-                        
-                        for i, unit in enumerate(selected_units):
+                elif event.button == 3 and selected_units:
+                    target_world_x, target_world_y = camera.screen_to_world_coords(click_screen_pos[0], click_screen_pos[1])
+                    destination_indicators.clear() # Clear previous indicators
+                    
+                    for i, unit in enumerate(selected_units):
+                         # Ensure only friendly units receive move commands
+                        if unit.type == 'friendly':
                             # Simple formation: Offset positions slightly for multiple units
                             # TODO: Implement better formation logic
                             offset_x = (i % 3 - 1) * 30 # Example offset
@@ -142,16 +141,16 @@ class InputHandler:
                         # Only select if the box is larger than a small threshold (ignore clicks)
                         if drag_rect_screen.width > 5 or drag_rect_screen.height > 5:
                             mods = pygame.key.get_mods()
-                            add_to_selection = mods & pygame.KMOD_SHIFT
+                            shift_pressed = mods & pygame.KMOD_SHIFT
                             
-                            if not add_to_selection:
+                            if not shift_pressed:
                                 selected_units.clear()
                                 
                             for unit in all_units:
                                 # Get world rect, then convert to screen rect
                                 world_rect = unit.get_rect()
                                 unit_screen_rect = camera.apply(world_rect)
-                                if drag_rect_screen.colliderect(unit_screen_rect):
+                                if drag_rect_screen.colliderect(unit_screen_rect) and unit.type == 'friendly':
                                     if unit not in selected_units:
                                         selected_units.append(unit)
                                         
