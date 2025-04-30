@@ -94,3 +94,18 @@ Refactor `main.py` to improve modularity, readability, and maintainability by ex
     - [ ] Enhanced space background with images of planets, nebulae, and comets.
     - [ ] Implement parallax scrolling for multi-layered background effects.
     - [ ] Run tests and ensure the game looks and performs well with new assets.
+
+### Phase 8: Code Quality and Safety Improvements
+- [ ] **Static Type Checking with mypy:**
+    - [ ] Add type annotations to all core modules (game_logic.py, camera.py, ui.py, etc.)
+    - [ ] Fix existing type errors identified by mypy
+    - [ ] Create comprehensive type stubs (.pyi files) for critical interfaces
+    - [ ] Enable stricter mypy settings incrementally
+    - [ ] Set up CI integration to run type checking on all pull requests
+
+- [ ] **Code Refactoring and Optimization:**
+    - [ ] Review and optimize critical game loops for performance
+    - [ ] Implement consistent error handling throughout the codebase
+    - [ ] Add comprehensive logging for debugging
+    - [ ] Standardize code style with auto-formatting tools
+    - [ ] Run profiling and address performance bottlenecks
