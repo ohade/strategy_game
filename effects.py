@@ -1,9 +1,11 @@
 import pygame
 from typing import Tuple
+import math
 
 from camera import Camera
 
 BRIGHT_YELLOW = (255, 255, 100)
+WHITE = (255, 255, 255)
 
 class AttackEffect:
     """Represents a temporary visual effect for an attack (e.g., a laser line)."""
@@ -35,44 +37,52 @@ class AttackEffect:
         return self.timer <= 0
 
     def draw(self, surface: pygame.Surface, camera: Camera) -> None:
-        """Draw the attack effect (a line)."""
+        """Draw the attack effect (layered beam)."""
         # Convert world coordinates to screen coordinates
         screen_start = camera.apply_coords(int(self.start_pos[0]), int(self.start_pos[1]))
         screen_end = camera.apply_coords(int(self.end_pos[0]), int(self.end_pos[1]))
 
-        # Calculate alpha based on remaining time (fade out)
+        # Calculate alpha based on remaining time (fade out quickly)
         if self.duration <= 0: # Avoid division by zero
             alpha = 0
         else:
-            alpha = max(0, min(255, int((self.timer / self.duration) * 255)))
+            # Square the ratio to make it fade faster towards the end
+            time_left_ratio = max(0.0, self.timer / self.duration)
+            alpha = max(0, min(255, int((time_left_ratio ** 2) * 255)))
 
         if alpha <= 0:
             return # Don't draw if fully faded
 
+        # Define thicknesses
+        outer_thickness = int(self.thickness * 2.5) # Make outer glow noticeably thicker
+        inner_thickness = self.thickness
+        max_thickness = outer_thickness # For bounding box calculation
+
         # Create a temporary surface for alpha blending
-        # Determine bounds needed for the line surface
-        min_x = min(screen_start[0], screen_end[0]) - self.thickness
-        max_x = max(screen_start[0], screen_end[0]) + self.thickness
-        min_y = min(screen_start[1], screen_end[1]) - self.thickness
-        max_y = max(screen_start[1], screen_end[1]) + self.thickness
-        width = max_x - min_x
-        height = max_y - min_y
+        # Determine bounds needed for the thickest line
+        min_x = min(screen_start[0], screen_end[0]) - max_thickness
+        max_x = max(screen_start[0], screen_end[0]) + max_thickness
+        min_y = min(screen_start[1], screen_end[1]) - max_thickness
+        max_y = max(screen_start[1], screen_end[1]) + max_thickness
+        width = max(1, int(max_x - min_x))
+        height = max(1, int(max_y - min_y))
 
-        if width <= 0 or height <= 0:
-            return # Avoid creating zero-size surface
-
-        line_surf = pygame.Surface((width, height), pygame.SRCALPHA)
+        beam_surf = pygame.Surface((width, height), pygame.SRCALPHA)
 
         # Calculate line points relative to the surface
         surf_start = (screen_start[0] - min_x, screen_start[1] - min_y)
         surf_end = (screen_end[0] - min_x, screen_end[1] - min_y)
 
-        # Draw the line on the temporary surface with alpha
-        line_color = (*self.color[:3], alpha)
-        pygame.draw.line(line_surf, line_color, surf_start, surf_end, self.thickness)
+        # Draw Outer Glow (thicker, base color)
+        outer_color = (*self.color[:3], int(alpha * 0.8)) # Slightly less alpha for glow
+        pygame.draw.line(beam_surf, outer_color, surf_start, surf_end, outer_thickness)
+        
+        # Draw Inner Core (thinner, bright color)
+        inner_color = (*WHITE[:3], alpha) # Bright white core
+        pygame.draw.line(beam_surf, inner_color, surf_start, surf_end, inner_thickness)
 
         # Blit the temporary surface onto the main screen
-        surface.blit(line_surf, (min_x, min_y))
+        surface.blit(beam_surf, (min_x, min_y))
 
 
 # --- Destination Indicator --- 
