@@ -62,14 +62,14 @@ Refactor `main.py` to improve modularity, readability, and maintainability by ex
 
 ## Feature Enhancements
 
-### Phase 6: Unit Collision and Smart Targeting
-- [ ] **Unit Collision:**
+### Phase 6: Unit Collision and Smart Targeting ✅
+- [x] **Unit Collision:**
     - [x] Write tests for unit collision detection and handling.
     - [x] Implement collision detection system to prevent units from occupying the same space.
     - [x] Create unit separation behavior to realistically handle collisions.
     - [x] Run tests and ensure they pass.
     
-- [ ] **Smart Targeting:**
+- [x] **Smart Targeting:**
     - [x] Write tests for improved targeting logic with radius-based selection.
     - [x] Implement configurable radius targeting to detect enemy units near click location.
     - [x] Add "lock-on" functionality to prioritize enemy ships within targeting radius.
@@ -77,12 +77,12 @@ Refactor `main.py` to improve modularity, readability, and maintainability by ex
     - [x] Run tests and ensure they pass.
 
 ### Phase 7: Realistic Movement and Visual Improvements
-- [ ] **Realistic Unit Movement:**
-    - [ ] Write tests for gradual rotation and movement physics.
-    - [ ] Implement rotation mechanics so units turn realistically when changing direction.
-    - [ ] Add momentum/inertia to unit movement for more natural motion.
-    - [ ] Create smooth transitions between movement states.
-    - [ ] Run tests and ensure they pass.
+- [x] **Realistic Unit Movement:**
+    - [x] Write tests for gradual rotation and movement physics.
+    - [x] Implement rotation mechanics so units turn realistically when changing direction.
+    - [x] Add momentum/inertia to unit movement for more natural motion.
+    - [x] Create smooth transitions between movement states.
+    - [x] Run tests and ensure they pass.
     
 - [ ] **Visual Assets Integration:**
     - [ ] Create an assets module to handle loading and managing visual assets.

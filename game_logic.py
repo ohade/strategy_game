@@ -368,3 +368,160 @@ def get_closest_enemy_to_point(click_pos: Tuple[float, float], enemy_units: List
             closest_enemy = enemy
     
     return closest_enemy
+
+
+def calculate_rotation(start_x: float, start_y: float, target_x: float, target_y: float) -> float:
+    """Calculate the rotation angle (in degrees) from start point to target point.
+    
+    The angle is calculated counterclockwise from the positive x-axis (east).
+    
+    Args:
+        start_x: X-coordinate of the starting point
+        start_y: Y-coordinate of the starting point
+        target_x: X-coordinate of the target point
+        target_y: Y-coordinate of the target point
+        
+    Returns:
+        Angle in degrees (0-360) between the points
+    """
+    # Calculate direction vector
+    dx = target_x - start_x
+    dy = target_y - start_y
+    
+    # Calculate angle in radians, then convert to degrees
+    angle_rad = math.atan2(dy, dx)
+    angle_deg = math.degrees(angle_rad)
+    
+    # Convert to 0-360 range (atan2 returns -180 to 180)
+    if angle_deg < 0:
+        angle_deg += 360
+        
+    return angle_deg
+
+
+def apply_rotation_inertia(current_angle: float, target_angle: float, max_rotation_speed: float) -> float:
+    """Gradually rotate from current angle towards target angle with inertia.
+    
+    This function limits rotation speed to simulate realistic turning.
+    It takes the shortest path around the circle (clockwise or counterclockwise).
+    
+    Args:
+        current_angle: Current rotation angle in degrees (0-360)
+        target_angle: Target rotation angle in degrees (0-360)
+        max_rotation_speed: Maximum rotation speed in degrees per update
+        
+    Returns:
+        New rotation angle after applying inertia
+    """
+    # Normalize angles to 0-360 range
+    current_angle = current_angle % 360
+    target_angle = target_angle % 360
+    
+    # Calculate the direct difference between angles
+    angle_diff = target_angle - current_angle
+    
+    # Handle wrapping around 360 degrees (find shortest path)
+    if angle_diff > 180:
+        angle_diff -= 360
+    elif angle_diff < -180:
+        angle_diff += 360
+    
+    # Apply speed limit
+    if abs(angle_diff) <= max_rotation_speed:
+        # If we can reach the target in this step, go directly to it
+        return target_angle
+    elif angle_diff > 0:
+        # Rotate clockwise by max speed
+        new_angle = current_angle + max_rotation_speed
+        return new_angle
+    else:
+        # Rotate counterclockwise by max speed
+        new_angle = current_angle - max_rotation_speed
+        # Handle wrapping for negative angles
+        if new_angle < 0:
+            new_angle += 360
+        return new_angle
+
+
+def smooth_movement(unit: Any, target_x: float, target_y: float, dt: float) -> None:
+    """Apply smooth movement with rotation inertia and acceleration/deceleration.
+    
+    This function updates a unit's position, rotation, and velocity to move towards
+    a target position in a realistic way, considering inertia and gradual turning.
+    
+    Args:
+        unit: The unit to move (must have appropriate attributes)
+        target_x: X-coordinate of the target position
+        target_y: Y-coordinate of the target position
+        dt: Delta time in seconds
+    """
+    # Calculate target rotation based on direction to target
+    target_angle = calculate_rotation(unit.world_x, unit.world_y, target_x, target_y)
+    
+    # Initialize velocity components if they don't exist
+    if not hasattr(unit, 'velocity_x'):
+        unit.velocity_x = 0.0
+    if not hasattr(unit, 'velocity_y'):
+        unit.velocity_y = 0.0
+        
+    # Define rotation speed (degrees per second)
+    if not hasattr(unit, 'max_rotation_speed'):
+        max_rotation_speed = 180.0  # Default: 180 degrees per second
+    else:
+        max_rotation_speed = unit.max_rotation_speed
+        
+    # Apply rotation with inertia, scaled by time
+    max_rotation_this_frame = max_rotation_speed * dt
+    unit.rotation = apply_rotation_inertia(unit.rotation, target_angle, max_rotation_this_frame)
+    
+    # Calculate distance to target
+    distance_to_target = math.hypot(target_x - unit.world_x, target_y - unit.world_y)
+    
+    # Define acceleration and max speed
+    if not hasattr(unit, 'acceleration'):
+        acceleration = 200.0  # Default: 200 units per second^2
+    else:
+        acceleration = unit.acceleration
+        
+    if not hasattr(unit, 'max_speed'):
+        max_speed = 100.0  # Default: 100 units per second
+    else:
+        max_speed = unit.max_speed
+    
+    # If close to target, start slowing down
+    braking_distance = (max_speed * max_speed) / (2 * acceleration)
+    
+    # Calculate forward vector based on current rotation
+    forward_x = math.cos(math.radians(unit.rotation))
+    forward_y = math.sin(math.radians(unit.rotation))
+    
+    # Adjust velocity based on alignment with forward direction
+    alignment = forward_x * (target_x - unit.world_x) + forward_y * (target_y - unit.world_y)
+    alignment = max(-1.0, min(1.0, alignment / max(0.1, distance_to_target)))  # Normalize
+    
+    # Calculate acceleration scaled by alignment and time
+    accel_value = acceleration * dt
+    if distance_to_target < braking_distance:
+        # Slow down when approaching target
+        accel_value = -accel_value
+    
+    # Apply acceleration in the forward direction
+    unit.velocity_x += forward_x * accel_value * alignment
+    unit.velocity_y += forward_y * accel_value * alignment
+    
+    # Apply velocity limits
+    current_speed = math.hypot(unit.velocity_x, unit.velocity_y)
+    if current_speed > max_speed:
+        # Scale back to max speed
+        scale_factor = max_speed / current_speed
+        unit.velocity_x *= scale_factor
+        unit.velocity_y *= scale_factor
+    
+    # Apply damping when not aligned with target (simulates sideways drag)
+    damping = 1.0 - (0.8 * dt * (1.0 - abs(alignment)))
+    unit.velocity_x *= damping
+    unit.velocity_y *= damping
+    
+    # Update position based on velocity
+    unit.world_x += unit.velocity_x * dt
+    unit.world_y += unit.velocity_y * dt
