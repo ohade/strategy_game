@@ -8,6 +8,7 @@ from ui import UnitInfoPanel
 from effects import AttackEffect, DestinationIndicator, ExplosionEffect # Import the effect classes
 from constants import * # Import all constants
 from input_handler import InputHandler # Import the new handler
+from game_logic import update_unit_movement, update_targeting
 
 def main() -> None:
     """Main game function."""
@@ -117,30 +118,8 @@ def main() -> None:
             if effect: # If unit update returned an effect (e.g., attack)
                 effects.append(effect)
 
-            # Basic AI for Enemies and Friendlies (auto-target appropriate units when idle)
-            if isinstance(unit, Unit) and unit.state == "idle":
-                if unit.type == 'enemy':
-                    # Enemy units target closest friendly
-                    closest_target = None
-                    closest_distance = float('inf')
-                    for target in friendly_units:
-                        distance = math.hypot(target.world_x - unit.world_x, target.world_y - unit.world_y)
-                        if distance < closest_distance:
-                            closest_target = target
-                            closest_distance = distance
-                    if closest_target:
-                        unit.set_target(closest_target)
-                elif unit.type == 'friendly':
-                    # Friendly units target closest enemy
-                    closest_target = None
-                    closest_distance = float('inf')
-                    for target in enemy_units:
-                        distance = math.hypot(target.world_x - unit.world_x, target.world_y - unit.world_y)
-                        if distance < closest_distance:
-                            closest_target = target
-                            closest_distance = distance
-                    if closest_target:
-                        unit.set_target(closest_target)
+            # Use game_logic module for unit targeting
+            update_targeting(unit, friendly_units, enemy_units)
 
             for unit_other in all_units:
                 # Check if unit's HP dropped to zero or below AFTER update

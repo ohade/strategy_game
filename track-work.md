@@ -23,12 +23,12 @@ Refactor `main.py` to improve modularity, readability, and maintainability by ex
 
 ### Phase 3: Game Logic / State Update
 
-- [ ] **Unit Movement:**
+- [x] **Unit Movement:**
     - [x] Write tests for unit movement towards a destination (`tests/test_game_logic.py`).
     - [x] Create `game_logic.py`.
-    - [ ] Extract unit movement logic from `main.py` into `game_logic.py`.
-    - [ ] Refactor `main.py` to call the new game logic functions for movement.
-    - [ ] Run movement tests and ensure they pass.
+    - [x] Extract unit movement logic from `main.py` into `game_logic.py`.
+    - [x] Refactor `main.py` to call the new game logic functions for movement.
+    - [x] Run movement tests and ensure they pass.
 - [ ] **Targeting/Attack Logic:** (Placeholder)
     - [ ] Define tests.
     - [ ] Extract logic.

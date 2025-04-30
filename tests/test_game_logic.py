@@ -3,8 +3,7 @@
 import pytest
 import math
 
-# TODO: Add imports for game logic module once created
-# from game_logic import update_unit_movement
+from game_logic import update_unit_movement, find_closest_target, update_targeting
 
 # --- Mocks --- #
 
@@ -36,20 +35,15 @@ def test_unit_moves_towards_destination():
     start_pos = (unit.world_x, unit.world_y)
     start_dist = math.hypot(unit.destination[0] - start_pos[0], unit.destination[1] - start_pos[1])
 
-    # This function doesn't exist yet!
-    # update_unit_movement(unit, dt)
-    # Placeholder: Manually calculate expected movement for now
-    # In a real scenario, we'd call the function from game_logic
+    # Calculate expected movement for verification
     expected_dist_moved = unit.speed * dt
     direction_x = (unit.destination[0] - start_pos[0]) / start_dist
     direction_y = (unit.destination[1] - start_pos[1]) / start_dist
     expected_x = start_pos[0] + direction_x * expected_dist_moved
     expected_y = start_pos[1] + direction_y * expected_dist_moved
 
-    # Simulate the update function's effect (replace with actual call later)
-    unit.world_x = expected_x 
-    unit.world_y = expected_y
-    # End placeholder
+    # Call the actual game logic function
+    update_unit_movement(unit, dt)
 
     end_pos = (unit.world_x, unit.world_y)
     end_dist = math.hypot(unit.destination[0] - end_pos[0], unit.destination[1] - end_pos[1])
@@ -61,7 +55,42 @@ def test_unit_moves_towards_destination():
     assert math.isclose(start_dist - end_dist, expected_dist_moved)
 
 
-@pytest.mark.skip(reason="Need update_unit_movement implementation")
-def test_placeholder():
-    """Placeholder test."""
-    assert True
+def test_find_closest_target():
+    """Test that find_closest_target returns the closest unit."""
+    unit = MockUnit(x=0, y=0, unit_id=1)
+    target1 = MockUnit(x=100, y=0, unit_id=2)
+    target2 = MockUnit(x=50, y=0, unit_id=3)
+    target3 = MockUnit(x=200, y=0, unit_id=4)
+    
+    targets = [target1, target2, target3]
+    
+    # Target2 should be closest (at distance 50)
+    closest = find_closest_target(unit, targets)
+    assert closest.id == target2.id
+    
+    # Empty list should return None
+    assert find_closest_target(unit, []) is None
+
+
+def test_update_targeting():
+    """Test that update_targeting sets the correct target based on unit type."""
+    friendly_unit = MockUnit(x=0, y=0, unit_id=1)
+    friendly_unit.type = 'friendly'
+    friendly_unit.state = 'idle'
+    friendly_unit.set_target_called = False
+    friendly_unit.last_target = None
+    
+    def mock_set_target(target):
+        friendly_unit.set_target_called = True
+        friendly_unit.last_target = target
+        
+    friendly_unit.set_target = mock_set_target
+    
+    enemy_unit = MockUnit(x=100, y=0, unit_id=2)
+    enemy_unit.type = 'enemy'
+    
+    # Test friendly unit targeting enemy
+    update_targeting(friendly_unit, [friendly_unit], [enemy_unit])
+    
+    assert friendly_unit.set_target_called
+    assert friendly_unit.last_target.id == enemy_unit.id
