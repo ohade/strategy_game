@@ -322,8 +322,97 @@ def test_camera_zoom_with_wheel(game_state):
     mock_camera.handle_zoom.assert_called_once_with(-1, mouse_pos)
     # mock_camera.move.assert_not_called() # InputHandler doesn't call move
 
+def test_drag_selection_preview(game_state):
+    """Test that units get preview_selected when mouse drags over them."""
+    handler = InputHandler()
+    
+    # We'll simulate a drag that starts in empty space and covers unit1
+    mock_unit1 = game_state['all_units'][0]
+    
+    # Start drag at empty space
+    drag_start_pos = (50, 50)  # Some point away from all units
+    mock_mousedown = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=drag_start_pos)
+    mock_keys = {key: False for key in range(512)}  # No keys pressed
+    
+    # Process the MOUSEBUTTONDOWN event to start dragging
+    with patch('pygame.key.get_mods', return_value=pygame.KMOD_NONE):
+        running, game_state['selected_units'], game_state['destination_indicators'], \
+        handler.is_dragging, handler.drag_start_pos, handler.drag_current_pos = \
+            handler.process_input(
+                [mock_mousedown],
+                mock_keys,
+                drag_start_pos,
+                game_state['dt'],
+                game_state['camera'],
+                game_state['all_units'],
+                game_state['selected_units'],
+                game_state['unit_info_panel'],
+                game_state['destination_indicators']
+            )
+    
+    # Verify drag was initiated
+    assert handler.is_dragging
+    assert handler.drag_start_pos == drag_start_pos
+    
+    # Now simulate mouse motion that creates a selection rectangle covering unit1
+    # Get unit1's center for this test - we'll drag to a point beyond it
+    unit1_center = mock_unit1.get_rect().center
+    drag_current_pos = (unit1_center[0] + 20, unit1_center[1] + 20)  # Point beyond unit1
+    
+    # Reset preview_selected for test clarity
+    for unit in game_state['all_units']:
+        unit.preview_selected = False
+    
+    # Process a MOUSEMOTION event
+    mock_motion = pygame.event.Event(pygame.MOUSEMOTION, pos=drag_current_pos, rel=(0, 0), buttons=(1, 0, 0))
+    
+    handler.process_input(
+        [mock_motion],
+        mock_keys,
+        drag_current_pos,
+        game_state['dt'],
+        game_state['camera'],
+        game_state['all_units'],
+        game_state['selected_units'],
+        game_state['unit_info_panel'],
+        game_state['destination_indicators']
+    )
+    
+    # Check unit1 is preview_selected since it's in the drag area
+    assert mock_unit1.preview_selected
+    
+    # Check units outside the selection area are not preview_selected
+    assert not any(unit.preview_selected for unit in game_state['all_units'][1:])
+    
+    # Now simulate mouse up to finalize selection
+    mock_mouseup = pygame.event.Event(pygame.MOUSEBUTTONUP, button=1, pos=drag_current_pos)
+    
+    with patch('pygame.key.get_mods', return_value=pygame.KMOD_NONE):
+        running, game_state['selected_units'], game_state['destination_indicators'], \
+        handler.is_dragging, handler.drag_start_pos, handler.drag_current_pos = \
+            handler.process_input(
+                [mock_mouseup],
+                mock_keys,
+                drag_current_pos,
+                game_state['dt'],
+                game_state['camera'],
+                game_state['all_units'],
+                game_state['selected_units'],
+                game_state['unit_info_panel'],
+                game_state['destination_indicators']
+            )
+    
+    # Verify drag ended
+    assert not handler.is_dragging
+    assert handler.drag_start_pos is None
+    
+    # Check unit1 is now selected (not just preview)
+    assert mock_unit1 in game_state['selected_units']
+    
+    # Check all preview_selected flags are reset after drag is complete
+    assert not any(unit.preview_selected for unit in game_state['all_units'])
+
 # TODO:
 # - Add tests for camera panning via mouse at screen edge (this IS handled by InputHandler).
-# - Add tests for drag selection (start, motion, end).
 # - Add tests for clicking UI panel toggle (requires MockInfoPanel update).
 # - Add tests for Camera.update() method separately (in test_camera.py or similar).

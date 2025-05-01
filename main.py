@@ -60,6 +60,7 @@ def main() -> None:
 
     running: bool = True
     selected_units: list[Unit] = [] # Track all currently selected units
+    control_groups: dict[int, list[Unit]] = {} # Map number keys (1-9) to groups of units
     
     # Variables to track drag selection
     is_dragging: bool = False

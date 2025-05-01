@@ -82,6 +82,10 @@ class InputHandler:
                     self.is_dragging = True
                     self.drag_start_pos = click_screen_pos # Use event pos for drag start
                     self.drag_current_pos = click_screen_pos # Initialize
+                    
+                    # Reset preview_selected flag for all units at the start of drag
+                    for unit in all_units:
+                        unit.preview_selected = False
 
                     mods = pygame.key.get_mods()
                     shift_pressed = mods & pygame.KMOD_SHIFT
@@ -103,12 +107,23 @@ class InputHandler:
                                 # Regular click: select only this unit
                                 newly_selected_units = [unit]
                     if newly_selected_units:
-                        if shift_pressed:
-                            selected_units.extend(newly_selected_units)
-                        else:
+                        # If not shift-selecting, first deselect all currently selected units
+                        if not shift_pressed:
+                            for unit in selected_units:
+                                unit.selected = False
                             selected_units = newly_selected_units
+                        else:
+                            # For shift-select, simply extend the selection
+                            selected_units.extend(newly_selected_units)
+                            
+                        # Set selected flag for all newly selected units
+                        for unit in newly_selected_units:
+                            unit.selected = True
 
                     if not clicked_on_unit and not shift_pressed:
+                        # When clicking on empty space, deselect all units
+                        for unit in selected_units:
+                            unit.selected = False
                         selected_units.clear()
 
                 # --- Right Click ---    
@@ -165,7 +180,10 @@ class InputHandler:
                         shift_pressed = mods & pygame.KMOD_SHIFT
 
                         if not shift_pressed:
-                            selected_units.clear()
+                            # Clear previous selection if Shift is not held
+                            for unit in all_units:
+                                unit.selected = False
+                            selected_units.clear() # Make sure to clear the list too
 
                         for unit in all_units:
                             # Get world rect, then convert to screen rect
@@ -174,7 +192,13 @@ class InputHandler:
                             if drag_rect_screen.colliderect(unit_screen_rect) and unit.type == 'friendly':
                                 if unit not in selected_units:
                                     selected_units.append(unit)
+                                    unit.selected = True # Make sure to set the selected flag
 
+                # Reset preview_selected for all units when drag selection ends
+                for unit in all_units:
+                    unit.preview_selected = False
+                    
+                # Reset drag state
                 self.is_dragging = False
                 self.drag_start_pos = None
                 self.drag_current_pos = None
@@ -183,6 +207,28 @@ class InputHandler:
             elif event.type == pygame.MOUSEMOTION:
                 if self.is_dragging:
                     self.drag_current_pos = event.pos
+                    
+                    # Calculate current drag selection rectangle
+                    drag_rect_screen = pygame.Rect(
+                        min(self.drag_start_pos[0], self.drag_current_pos[0]),
+                        min(self.drag_start_pos[1], self.drag_current_pos[1]),
+                        abs(self.drag_current_pos[0] - self.drag_start_pos[0]),
+                        abs(self.drag_current_pos[1] - self.drag_start_pos[1])
+                    )
+                    
+                    # Update preview_selected state for all units
+                    for unit in all_units:
+                        # Only friendly units can be selected
+                        if unit.type == 'friendly':
+                            # Get world rect, then convert to screen rect
+                            world_rect = unit.get_rect()
+                            unit_screen_rect = camera.apply(world_rect)
+                            
+                            # Set preview_selected if unit intersects with the drag rectangle
+                            unit.preview_selected = drag_rect_screen.colliderect(unit_screen_rect)
+                        else:
+                            # Enemy units shouldn't show preview selection
+                            unit.preview_selected = False
         
         # Return updated state
         return running, selected_units, destination_indicators, self.is_dragging, self.drag_start_pos, self.drag_current_pos

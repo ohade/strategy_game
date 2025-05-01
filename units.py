@@ -66,6 +66,7 @@ class Unit:
     min_trail_dist_sq: int = 100  # Minimum squared distance to create a new trail point
     flare_flicker: float = 1.0
     selected: bool = False  # For player selection indication
+    preview_selected: bool = False  # For selection preview during rectangle drag
     
     def __post_init__(self) -> None:
         """Initialize derived attributes after dataclass initialization."""
@@ -162,11 +163,30 @@ class Unit:
             # Draw the rotated sprite
             surface.blit(rotated_sprite, sprite_rect.topleft)
             
-            # Draw selection indicator if selected
-            if self.selected:
-                # Draw outline around the sprite
-                pygame.draw.rect(surface, WHITE, sprite_rect, 2)  # 2 pixel width
-                
+            # Draw selection indicator if selected or preview-selected
+            if self.selected or self.preview_selected:
+                # Try to use mask for accurate outline that follows sprite shape
+                try:
+                    mask = pygame.mask.from_surface(rotated_sprite)
+                    outline_points = mask.outline()
+                    
+                    # Translate outline points to the sprite's position on screen
+                    translated_points = [(p[0] + sprite_rect.left, p[1] + sprite_rect.top) for p in outline_points]
+                    
+                    # Draw the outline using lines
+                    if len(translated_points) > 1:
+                        # Use green for both selection and preview
+                        outline_color = GREEN
+                        pygame.draw.lines(surface, outline_color, True, translated_points, 2) # Closed loop, 2px thick
+                    else:
+                        # Fallback if mask outline fails
+                        outline_rect = sprite_rect.inflate(4, 4) # Slightly larger than the sprite
+                        pygame.draw.rect(surface, GREEN, outline_rect, 2)
+                except Exception as e:
+                    # Fallback to simple rectangle if mask creation fails
+                    outline_rect = sprite_rect.inflate(4, 4)
+                    pygame.draw.rect(surface, GREEN, outline_rect, 2)
+                    
         except Exception as e:
             # Fallback to geometric rendering if sprites can't be loaded
             print(f"Falling back to geometric rendering: {e}")
@@ -190,10 +210,10 @@ class Unit:
             # Draw the polygon
             pygame.draw.polygon(surface, self.color, rotated_points)
 
-            # Draw selection indicator if selected
-            if self.selected:
+            # Draw selection indicator if selected or preview_selected
+            if self.selected or self.preview_selected:
                 # Draw outline around the polygon
-                pygame.draw.polygon(surface, WHITE, rotated_points, 2)
+                pygame.draw.polygon(surface, GREEN, rotated_points, 2)
 
         # Draw health bar if not at max HP
         if self.hp < self.hp_max:
