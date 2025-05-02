@@ -172,6 +172,12 @@ This file is the central source of truth for all project tasks, both open and co
     - [x] Implement fighter transparency fade-in effect when launching | Created: 2025-05-02 | Completed: 2025-05-02
     - [x] Improve launch point positioning for realistic launch locations | Created: 2025-05-02 | Completed: 2025-05-02
     - [x] Add initial momentum and patrol behavior for launched fighters | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Position launch points at exact edges of carrier sprite | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Implement carrier momentum inheritance for launched fighters | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Increase launch velocity for more realistic launch effect | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Improve launch animation with non-linear easing functions | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Create gradual emergence effect from inside carrier | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Increase patrol distance to prevent early stopping | Created: 2025-05-02 | Completed: 2025-05-02
 
 - [ ] **Implement Orderly Launch/Land Sequencing**
     - [ ] Write tests for sequential one-by-one launch procedure | Created: 2025-05-01 | Completed: 
