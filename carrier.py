@@ -162,11 +162,17 @@ class Carrier(FriendlyUnit):
         # Carrier-specific attributes
         self.fighter_capacity = 10  # Maximum number of fighters it can hold
         self.stored_fighters = []   # List to track stored fighters
-        self.launch_points = [      # Points where fighters launch from (relative to carrier)
-            (self.radius, 0),       # Right side
-            (-self.radius, 0),      # Left side
-            (0, self.radius),       # Bottom
-            (0, -self.radius)       # Top
+        
+        # Define more realistic launch points for the carrier
+        # These are positioned to look like actual launch pads/flight decks
+        # For a Battlestar Galactica style carrier, launch tubes would be in the front section
+        front_offset = self.radius * 0.8  # Launch pad at 80% of the radius toward the front
+        side_offset = self.radius * 0.3   # Slight offset from center line for side launches
+        
+        self.launch_points = [
+            (front_offset, 0),          # Front center launch tube
+            (front_offset, side_offset), # Front right launch tube
+            (front_offset, -side_offset) # Front left launch tube
         ]
         
         # Carrier state tracking
@@ -546,8 +552,20 @@ class Carrier(FriendlyUnit):
             # Set initial direction to match carrier's rotation
             fighter.rotation = self.rotation
         
-        # Reactivate the fighter (in case we had deactivated it)
-        fighter.set_state("idle")
+        # Set fighter to moving state to activate flight behavior
+        fighter.set_state("moving")
+        
+        # Give fighter initial momentum in the direction it's facing 
+        launch_speed = fighter.max_speed * 1.5  # Initial boost from launch
+        angle_rad = math.radians(fighter.rotation)
+        fighter.velocity_x = math.cos(angle_rad) * launch_speed
+        fighter.velocity_y = math.sin(angle_rad) * launch_speed
+        
+        # Create a patrol point forward of the carrier
+        patrol_distance = 200  # Distance ahead to patrol
+        patrol_x = self.world_x + math.cos(angle_rad) * patrol_distance
+        patrol_y = self.world_y + math.sin(angle_rad) * patrol_distance
+        fighter.move_target = (patrol_x, patrol_y)
         
         # Initialize opacity effect (start invisible, fade in over time)
         fighter.opacity = 0

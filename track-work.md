@@ -169,6 +169,9 @@ This file is the central source of truth for all project tasks, both open and co
     - [x] Add launch cooldown and queuing mechanism | Created: 2025-05-02 | Completed: 2025-05-02
     - [x] Write tests for visual launch sequence animation | Created: 2025-05-02 | Completed: 2025-05-02
     - [x] Implement visual launch sequence animation | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Implement fighter transparency fade-in effect when launching | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Improve launch point positioning for realistic launch locations | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Add initial momentum and patrol behavior for launched fighters | Created: 2025-05-02 | Completed: 2025-05-02
 
 - [ ] **Implement Orderly Launch/Land Sequencing**
     - [ ] Write tests for sequential one-by-one launch procedure | Created: 2025-05-01 | Completed: 
@@ -199,7 +202,8 @@ This file is the central source of truth for all project tasks, both open and co
 - [ ] **Player Controls for Carrier Operations:**
     - [x] Write tests for player-initiated fighter launches | Created: 2025-05-02 | Completed: 2025-05-02
     - [x] Implement keyboard shortcut for launching fighters from selected carrier | Created: 2025-05-02 | Completed: 2025-05-02
-    - [ ] Create UI button for launching fighters when carrier is selected | Created: 2025-05-02 | Completed: 
+    - [x] Write tests for UI button for launching fighters | Created: 2025-05-02 | Completed: 2025-05-02
+    - [ ] Implement UI button for launching fighters when carrier is selected | Created: 2025-05-02 | Completed: 
     - [ ] Create visual indicators for available/cooldown launch points | Created: 2025-05-02 | Completed: 
     - [ ] Write tests for fighter return-to-carrier commands | Created: 2025-05-02 | Completed: 
     - [ ] Implement right-click command to send fighters back to carrier | Created: 2025-05-02 | Completed: 
