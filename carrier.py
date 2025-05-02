@@ -546,8 +546,21 @@ class Carrier(FriendlyUnit):
             rotated_x = offset_x * math.cos(angle_rad) - offset_y * math.sin(angle_rad)
             rotated_y = offset_x * math.sin(angle_rad) + offset_y * math.cos(angle_rad)
             
+            # Set fighter position exactly at the launch point
             fighter.world_x = self.world_x + rotated_x
             fighter.world_y = self.world_y + rotated_y
+            
+            # Also set the draw coordinates to match (to avoid interpolation effects)
+            fighter.draw_x = fighter.world_x
+            fighter.draw_y = fighter.world_y
+            fighter.last_draw_x = fighter.world_x
+            fighter.last_draw_y = fighter.world_y
+            
+            # Store the launch point for animation reference
+            self.current_launch_position = (fighter.world_x, fighter.world_y)
+            
+            # Set the launch origin on the fighter for emergence animation
+            fighter.launch_origin = (fighter.world_x, fighter.world_y)
             
             # Set initial direction to match carrier's rotation
             fighter.rotation = self.rotation
@@ -567,9 +580,12 @@ class Carrier(FriendlyUnit):
         patrol_y = self.world_y + math.sin(angle_rad) * patrol_distance
         fighter.move_target = (patrol_x, patrol_y)
         
-        # Initialize opacity effect (start invisible, fade in over time)
+        # Initialize opacity effect (start completely invisible)
         fighter.opacity = 0
         fighter.current_fade_time = 0.0
+        
+        # Set a shorter fade duration for more immediate visibility
+        fighter.fade_in_duration = 0.5  # Faster fade-in (0.5 seconds)
         
         # Set the launch cooldown
         self.current_launch_cooldown = self.launch_cooldown

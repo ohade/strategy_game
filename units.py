@@ -259,6 +259,22 @@ class Unit:
             # Calculate opacity based on current fade progress
             fade_progress = self.current_fade_time / self.fade_in_duration
             self.opacity = min(255, int(255 * fade_progress))
+            
+            # If unit has launch_origin and is still launching, simulate emerging from carrier
+            # by moving it slightly in the direction it's facing as it fades in
+            if hasattr(self, 'launch_origin') and fade_progress < 1.0:
+                # Calculate how far the unit should move during fade-in
+                angle_rad = math.radians(self.rotation)
+                # Emergence distance is 20% of the unit's radius 
+                emergence_distance = self.radius * 0.2
+                
+                # Move the unit forward based on fade progress
+                emergence_x = math.cos(angle_rad) * emergence_distance * fade_progress
+                emergence_y = math.sin(angle_rad) * emergence_distance * fade_progress
+                
+                # Adjust position to create emerging effect
+                self.world_x = self.launch_origin[0] + emergence_x
+                self.world_y = self.launch_origin[1] + emergence_y
         
         # --- Smooth Movement Interpolation --- 
         # Move draw coordinates towards logical world coordinates
