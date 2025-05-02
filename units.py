@@ -68,6 +68,12 @@ class Unit:
     selected: bool = False  # For player selection indication
     preview_selected: bool = False  # For selection preview during rectangle drag
     
+    # Transparency effect (255 = fully opaque, 0 = invisible)
+    opacity: int = 255
+    # Animation properties
+    fade_in_duration: float = 1.0  # Time in seconds for unit to fully appear
+    current_fade_time: float = 0.0  # Current progress of fade animation
+    
     def __post_init__(self) -> None:
         """Initialize derived attributes after dataclass initialization."""
         self.type = self.unit_type
@@ -151,13 +157,18 @@ class Unit:
         # Get the appropriate sprite for this unit type
         
         try:
-            # Get the sprite and rotate it according to the unit's rotation
-            sprite = get_ship_sprite(self.unit_type)
+            # Get and rotate the sprite based on unit's rotation
+            ship_sprite = get_ship_sprite(self.unit_type)
+            rotated_sprite = pygame.transform.rotate(ship_sprite, -self.rotation) # Counter-clockwise
             
-            # Rotate the sprite (0 degrees = facing right, consistent with our rotation system)
-            rotated_sprite = pygame.transform.rotate(sprite, -self.rotation)  # Negative because pygame rotates counterclockwise
+            # Apply opacity to sprite if not fully opaque
+            if self.opacity < 255:
+                # Create a copy with per-pixel alpha
+                sprite_with_alpha = rotated_sprite.copy().convert_alpha()
+                # Apply the opacity value to all pixels
+                sprite_with_alpha.fill((255, 255, 255, self.opacity), None, pygame.BLEND_RGBA_MULT)
+                rotated_sprite = sprite_with_alpha
             
-            # Get the rect for the rotated sprite
             sprite_rect = rotated_sprite.get_rect(center=screen_pos)
             
             # Draw the rotated sprite
@@ -241,6 +252,14 @@ class Unit:
         """
         attack_effect_generated: Optional[AttackEffect] = None
         
+        # Update opacity fade-in effect if unit is not fully opaque
+        if self.opacity < 255:
+            # Increase fade time based on dt
+            self.current_fade_time = min(self.fade_in_duration, self.current_fade_time + dt)
+            # Calculate opacity based on current fade progress
+            fade_progress = self.current_fade_time / self.fade_in_duration
+            self.opacity = min(255, int(255 * fade_progress))
+        
         # --- Smooth Movement Interpolation --- 
         # Move draw coordinates towards logical world coordinates
         lerp_factor = min(1.0, dt * 10) # Adjust lerp speed as needed
@@ -277,8 +296,8 @@ class Unit:
                 vector_y = target_pos[1] - self.world_y
                 distance = math.hypot(vector_x, vector_y)
                 
-                # Update flare flicker visual effect
-                self.flare_flicker = 1.0 + random.uniform(-0.3, 0.3)
+                # Update engine flare flicker effect
+                self.flare_flicker = max(0.7, min(1.3, self.flare_flicker + random.uniform(-0.1, 0.1)))
 
                 # Check proximity for state change
                 stop_distance = 0
