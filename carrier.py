@@ -159,20 +159,27 @@ class Carrier(FriendlyUnit):
         self.acceleration = 50     # Less acceleration
         self.max_rotation_speed = 45  # Slower rotation
         
+        # Load sprite and get dimensions first
+        self.sprite = get_carrier_sprite()
+        self.sprite_width = self.sprite.get_width()
+        self.sprite_height = self.sprite.get_height()
+        
         # Carrier-specific attributes
         self.fighter_capacity = 10  # Maximum number of fighters it can hold
         self.stored_fighters = []   # List to track stored fighters
         
-        # Define more realistic launch points for the carrier
-        # These are positioned to look like actual launch pads/flight decks
-        # For a Battlestar Galactica style carrier, launch tubes would be in the front section
-        front_offset = self.radius * 0.8  # Launch pad at 80% of the radius toward the front
-        side_offset = self.radius * 0.3   # Slight offset from center line for side launches
+        # Define launch points at the exact edges of the carrier sprite
+        # For a Battlestar Galactica style carrier, launch tubes would be at the front edge
         
+        # Use actual dimensions from the sprite
+        edge_x = self.sprite_width / 2  # Exact edge of the carrier sprite width
+        edge_y = self.sprite_height / 2  # Exact edge of the carrier sprite height
+        
+        # Position launch points at the carrier's front edge with small offsets
         self.launch_points = [
-            (front_offset, 0),          # Front center launch tube
-            (front_offset, side_offset), # Front right launch tube
-            (front_offset, -side_offset) # Front left launch tube
+            (edge_x, 0),                # Front center launch tube (exact edge)
+            (edge_x, edge_y * 0.3),     # Front right launch tube (30% up from center)
+            (edge_x, -edge_y * 0.3)     # Front left launch tube (30% down from center)
         ]
         
         # Carrier state tracking
@@ -192,11 +199,6 @@ class Carrier(FriendlyUnit):
         
         # Custom sprite flag
         self.has_custom_sprite = True
-        
-        # Store actual sprite dimensions for accurate collision and selection
-        self.sprite = get_carrier_sprite()
-        self.sprite_width = self.sprite.get_width()
-        self.sprite_height = self.sprite.get_height()
     
     def get_rect(self) -> pygame.Rect:
         """Get the carrier's rectangle based on its sprite dimensions.
@@ -568,14 +570,17 @@ class Carrier(FriendlyUnit):
         # Set fighter to moving state to activate flight behavior
         fighter.set_state("moving")
         
-        # Give fighter initial momentum in the direction it's facing 
-        launch_speed = fighter.max_speed * 1.5  # Initial boost from launch
+        # Give fighter initial momentum that combines the carrier's velocity plus a strong launch boost
+        # This creates a more realistic effect where the fighter inherits carrier momentum
+        launch_speed = fighter.max_speed * 3.0  # Much stronger boost (3x max speed)
         angle_rad = math.radians(fighter.rotation)
-        fighter.velocity_x = math.cos(angle_rad) * launch_speed
-        fighter.velocity_y = math.sin(angle_rad) * launch_speed
         
-        # Create a patrol point forward of the carrier
-        patrol_distance = 200  # Distance ahead to patrol
+        # Add carrier's velocity to fighter's initial velocity (momentum inheritance)
+        fighter.velocity_x = self.velocity_x + math.cos(angle_rad) * launch_speed
+        fighter.velocity_y = self.velocity_y + math.sin(angle_rad) * launch_speed
+        
+        # Create a patrol point much further from the carrier
+        patrol_distance = 400  # Double the distance to prevent stopping too soon
         patrol_x = self.world_x + math.cos(angle_rad) * patrol_distance
         patrol_y = self.world_y + math.sin(angle_rad) * patrol_distance
         fighter.move_target = (patrol_x, patrol_y)

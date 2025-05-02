@@ -260,21 +260,35 @@ class Unit:
             fade_progress = self.current_fade_time / self.fade_in_duration
             self.opacity = min(255, int(255 * fade_progress))
             
-            # If unit has launch_origin and is still launching, simulate emerging from carrier
-            # by moving it slightly in the direction it's facing as it fades in
+            # If unit has launch_origin and is still launching, use a smooth emergence animation
             if hasattr(self, 'launch_origin') and fade_progress < 1.0:
-                # Calculate how far the unit should move during fade-in
+                # Calculate how far the unit should have emerged by now
                 angle_rad = math.radians(self.rotation)
-                # Emergence distance is 20% of the unit's radius 
-                emergence_distance = self.radius * 0.2
                 
-                # Move the unit forward based on fade progress
-                emergence_x = math.cos(angle_rad) * emergence_distance * fade_progress
-                emergence_y = math.sin(angle_rad) * emergence_distance * fade_progress
+                # Use a non-linear easing function for smoother emergence
+                # Quadratic ease-in: makes the movement start slow and accelerate
+                eased_progress = fade_progress * fade_progress
                 
-                # Adjust position to create emerging effect
+                # Start position is slightly inside the carrier, then move to edge and beyond
+                # This creates the illusion of emerging from inside the carrier
+                # Use a longer emergence distance for more visible movement
+                start_offset = -self.radius * 0.5  # Start half a radius inside the carrier
+                end_offset = self.radius * 0.5     # End half a radius outside the carrier
+                
+                # Calculate current offset using eased progress
+                current_offset = start_offset + (end_offset - start_offset) * eased_progress
+                
+                # Apply the offset in the direction the unit is facing
+                emergence_x = math.cos(angle_rad) * current_offset
+                emergence_y = math.sin(angle_rad) * current_offset
+                
+                # Adjust position to create smooth emerging effect
                 self.world_x = self.launch_origin[0] + emergence_x
                 self.world_y = self.launch_origin[1] + emergence_y
+                
+                # Also adjust draw coordinates for immediate visual effect
+                self.draw_x = self.world_x
+                self.draw_y = self.world_y
         
         # --- Smooth Movement Interpolation --- 
         # Move draw coordinates towards logical world coordinates
