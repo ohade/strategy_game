@@ -10,7 +10,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # We'll be implementing this function in game_logic.py
-from game_logic import detect_unit_collision, resolve_unit_collision
+from game_logic import detect_unit_collision, resolve_collision_with_mass
 
 class TestUnitCollision:
     
@@ -61,8 +61,8 @@ class TestUnitCollision:
         # Units are exactly touching (distance = combined radii)
         assert detect_unit_collision(unit1, unit2) is True
     
-    def test_resolve_unit_collision_moves_units_apart(self):
-        """Test that resolve_unit_collision separates overlapping units."""
+    def test_resolve_collision_with_mass_moves_units_apart(self):
+        """Test that resolve_collision_with_mass separates overlapping units."""
         # Create two overlapping units
         unit1 = MagicMock()
         unit1.world_x = 100
@@ -78,7 +78,7 @@ class TestUnitCollision:
         assert detect_unit_collision(unit1, unit2) is True
         
         # Resolve the collision
-        resolve_unit_collision(unit1, unit2)
+        resolve_collision_with_mass(unit1, unit2)
         
         # Calculate distance after resolution
         distance = math.hypot(unit2.world_x - unit1.world_x, unit2.world_y - unit1.world_y)
@@ -86,8 +86,8 @@ class TestUnitCollision:
         # Units should now be at least at a distance equal to the sum of their radii
         assert distance >= (unit1.radius + unit2.radius)
     
-    def test_resolve_unit_collision_distributes_movement_evenly(self):
-        """Test that resolve_unit_collision distributes movement evenly between units."""
+    def test_resolve_collision_with_mass_distributes_movement_evenly(self):
+        """Test that resolve_collision_with_mass distributes movement evenly between units."""
         # Store original positions
         x1, y1 = 100, 100
         x2, y2 = 120, 100
@@ -104,7 +104,7 @@ class TestUnitCollision:
         unit2.radius = 15
         
         # Resolve the collision
-        resolve_unit_collision(unit1, unit2)
+        resolve_collision_with_mass(unit1, unit2)
         
         # Calculate how much each unit moved
         unit1_movement = math.hypot(unit1.world_x - x1, unit1.world_y - y1)

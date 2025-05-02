@@ -6,7 +6,7 @@ from parallax_background import ParallaxBackground
 from camera import Camera
 from constants import *  # Import all constants
 from effects import DestinationIndicator, ExplosionEffect  # Import the effect classes
-from game_logic import update_targeting, update_effects, detect_unit_collision, resolve_unit_collision
+from game_logic import update_targeting, update_effects, detect_unit_collision, resolve_collision_with_mass
 from input_handler import InputHandler  # Import the new handler
 from ui import UnitInfoPanel
 from units import Unit
@@ -49,13 +49,11 @@ def main() -> None:
     enemy_units: list[Unit] = [
         Unit(800, 400, 'enemy'),
         Unit(900, 500, 'enemy'),
-        Unit(800, 400, 'enemy'),
-        Unit(900, 500, 'enemy'),
-        Unit(800, 400, 'enemy'),
-        Unit(900, 500, 'enemy'),
-        Unit(800, 400, 'enemy'),
-        # Unit(900, 500, 'enemy'),
-        # Unit(850, 450, 'enemy')
+        Unit(850, 450, 'enemy'),
+        Unit(950, 550, 'enemy'),
+        Unit(750, 350, 'enemy'),
+        Unit(870, 470, 'enemy'),
+        Unit(930, 430, 'enemy')
     ]
     all_units: list[Unit] = friendly_units + enemy_units
 
@@ -131,7 +129,7 @@ def main() -> None:
         for i, unit1 in enumerate(all_units):
             for unit2 in all_units[i+1:]:  # Only check each pair once
                 if detect_unit_collision(unit1, unit2):
-                    resolve_unit_collision(unit1, unit2)
+                    resolve_collision_with_mass(unit1, unit2)
  
          # Handle destroyed units
         if units_to_remove:

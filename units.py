@@ -6,7 +6,7 @@ import random
 from typing import Optional, Tuple, Union, List
 from dataclasses import dataclass, field
 from effects import AttackEffect # Import the new effect class
-from game_logic import update_unit_attack, smooth_movement
+from unit_mechanics import update_unit_attack, smooth_movement
 from camera import Camera
 from asset_manager import get_ship_sprite  # Import the ship sprite getter
 
