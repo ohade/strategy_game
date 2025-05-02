@@ -512,7 +512,23 @@ class Carrier(FriendlyUnit):
             # Could set the fighter to an "inactive" state here
             return True
         return False
-    
+        
+    def can_launch_fighter(self) -> bool:
+        """Check if the carrier can launch a fighter.
+        
+        Returns:
+            bool: True if the carrier has fighters and is not on cooldown, False otherwise
+        """
+        # Check if there are any fighters to launch
+        if not self.stored_fighters:
+            return False
+        
+        # Check if carrier is on launch cooldown
+        if self.current_launch_cooldown > 0:
+            return False
+            
+        return True
+
     def launch_fighter(self, position: Optional[Tuple[float, float]] = None) -> Optional[Unit]:
         """Launch a stored fighter at the specified position.
         
