@@ -178,6 +178,12 @@ class Carrier(FriendlyUnit):
         self.launch_cooldown = 1.0  # 1 second cooldown between fighter launches
         self.current_launch_cooldown = 0.0  # No cooldown initially (ready to launch)
         
+        # Launch animation properties
+        self.launch_animation_frames = 30  # Total frames for launch animation
+        self.current_animation_frame = 0   # Current frame of animation
+        self.is_animating_launch = False   # Flag for active animation
+        self.animation_speed = 40          # Frames per second for animation
+        
         # Custom sprite flag
         self.has_custom_sprite = True
         
@@ -227,6 +233,55 @@ class Carrier(FriendlyUnit):
         
         # Draw the sprite
         surface.blit(rotated_sprite, sprite_rect)
+        
+        # Draw launch animation if active
+        if self.is_animating_launch:
+            # Calculate animation progress (0.0 to 1.0)
+            progress = self.current_animation_frame / self.launch_animation_frames
+            
+            # Determine which launch point is being used (based on most recent launch)
+            launch_idx = len(self.stored_fighters) % len(self.launch_points)
+            offset_x, offset_y = self.launch_points[launch_idx]
+            
+            # Convert from relative to world coordinates
+            angle_rad = math.radians(self.rotation)
+            rotated_x = offset_x * math.cos(angle_rad) - offset_y * math.sin(angle_rad)
+            rotated_y = offset_x * math.sin(angle_rad) + offset_y * math.cos(angle_rad)
+            
+            # Calculate world position of launch point
+            launch_x = self.world_x + rotated_x
+            launch_y = self.world_y + rotated_y
+            
+            # Convert to screen coordinates
+            launch_screen_pos = camera.apply_coords(int(launch_x), int(launch_y))
+            
+            # Animation colors
+            start_color = (255, 255, 150, 200)  # Yellow-white with transparency
+            end_color = (50, 50, 200, 0)        # Blue fading to transparent
+            
+            # Interpolate color based on progress
+            current_color = [
+                int(start_color[0] + (end_color[0] - start_color[0]) * progress),
+                int(start_color[1] + (end_color[1] - start_color[1]) * progress),
+                int(start_color[2] + (end_color[2] - start_color[2]) * progress),
+                int(start_color[3] + (end_color[3] - start_color[3]) * progress)
+            ]
+            
+            # Animation size (starts small, grows, then fades)
+            size_curve = math.sin(progress * math.pi)  # 0->1->0 curve
+            base_size = 10
+            max_expansion = 30
+            current_size = base_size + max_expansion * size_curve
+            
+            # Create a surface for the animation with per-pixel alpha
+            anim_surface = pygame.Surface((int(current_size * 2), int(current_size * 2)), pygame.SRCALPHA)
+            pygame.draw.circle(anim_surface, current_color, 
+                              (int(current_size), int(current_size)), 
+                              int(current_size))
+            
+            # Draw the animation centered at the launch point
+            anim_rect = anim_surface.get_rect(center=launch_screen_pos)
+            surface.blit(anim_surface, anim_rect)
         
         # Draw collision warning indicators if there are any imminent collisions
         if hasattr(self, 'collision_warnings') and self.collision_warnings:
@@ -335,6 +390,19 @@ class Carrier(FriendlyUnit):
                 self.current_launch_cooldown = 0.0
                 # Reset launching flag when cooldown expires
                 self.is_launching = False
+        
+        # Update launch animation
+        if self.is_animating_launch:
+            # Calculate animation frame progress
+            # Convert time delta to frame advancement based on animation speed
+            frame_progress = dt * self.animation_speed
+            self.current_animation_frame += frame_progress
+            
+            # Check if animation has completed
+            if self.current_animation_frame >= self.launch_animation_frames:
+                # Animation complete, reset animation state
+                self.is_animating_launch = False
+                self.current_animation_frame = 0
         
         # The carrier has the front to the right (opposite from normal units)
         # We handle the rotation adjustment in the draw method by adding 180 degrees
@@ -486,5 +554,9 @@ class Carrier(FriendlyUnit):
         
         # Flag the carrier as currently launching
         self.is_launching = True
+        
+        # Start launch animation
+        self.is_animating_launch = True
+        self.current_animation_frame = 1  # Start at frame 1
         
         return fighter

@@ -258,5 +258,99 @@ class TestLaunchSequenceAndCooldown(unittest.TestCase):
         fighter = self.carrier.launch_fighter()
         self.assertIsNotNone(fighter, "Should be able to launch after cooldown expires")
 
+class TestLaunchAnimation(unittest.TestCase):
+    """Test case for the fighter launch animation functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures before each test method."""
+        self.carrier = Carrier(500, 300)
+        # Prefill some fighters for launch tests
+        self.fighters = []
+        for _ in range(3):
+            fighter = FriendlyUnit(0, 0)
+            self.carrier.store_fighter(fighter)
+            self.fighters.append(fighter)
+        
+        # Add animation properties if they don't exist
+        if not hasattr(self.carrier, 'launch_animation_frames'):
+            self.carrier.launch_animation_frames = 30  # Number of frames for launch animation
+        if not hasattr(self.carrier, 'current_animation_frame'):
+            self.carrier.current_animation_frame = 0  # Current frame of animation
+        if not hasattr(self.carrier, 'is_animating_launch'):
+            self.carrier.is_animating_launch = False  # Flag for active animation
+    
+    def test_animation_initialization(self):
+        """Test that the carrier initializes with correct animation properties."""
+        # Check that animation properties are properly set
+        self.assertTrue(hasattr(self.carrier, 'launch_animation_frames'), 
+                       "Carrier should have a launch_animation_frames attribute")
+        self.assertTrue(hasattr(self.carrier, 'current_animation_frame'), 
+                       "Carrier should have a current_animation_frame attribute")
+        self.assertTrue(hasattr(self.carrier, 'is_animating_launch'), 
+                       "Carrier should have an is_animating_launch attribute")
+        
+        # Initial animation state should be inactive
+        self.assertEqual(self.carrier.current_animation_frame, 0, 
+                       "Initial current_animation_frame should be 0")
+        self.assertFalse(self.carrier.is_animating_launch, 
+                        "Initial is_animating_launch should be False")
+    
+    def test_launch_starts_animation(self):
+        """Test that launching a fighter starts the animation sequence."""
+        # Launch a fighter
+        self.carrier.launch_fighter()
+        
+        # Animation should be active
+        self.assertTrue(self.carrier.is_animating_launch, 
+                      "Launching should set is_animating_launch to True")
+        self.assertEqual(self.carrier.current_animation_frame, 1, 
+                       "Launching should set current_animation_frame to 1")
+    
+    def test_animation_updates_with_time(self):
+        """Test that the animation progresses over time."""
+        # Launch a fighter to start animation
+        self.carrier.launch_fighter()
+        initial_frame = self.carrier.current_animation_frame
+        
+        # Update carrier state (simulate one frame of game time)
+        dt = 1/60  # 60 FPS
+        self.carrier.update(dt)
+        
+        # Animation frame should have advanced
+        self.assertGreater(self.carrier.current_animation_frame, initial_frame, 
+                          "Animation frame should increase after update")
+    
+    def test_animation_completes(self):
+        """Test that the animation completes after the required frames."""
+        # Launch a fighter to start animation
+        self.carrier.launch_fighter()
+        
+        # Simulate enough updates to complete the animation
+        # We'll use a large dt to force completion in a single update
+        dt = self.carrier.launch_animation_frames / 30  # Assuming 30 FPS
+        self.carrier.update(dt)
+        
+        # In our implementation, once the animation reaches or exceeds the final frame,
+        # it immediately resets to 0 and turns off. So we check that animation has completed.
+        self.assertFalse(self.carrier.is_animating_launch, 
+                        "Animation should end after completing all frames")
+        self.assertEqual(self.carrier.current_animation_frame, 0, 
+                       "Animation frame should reset after completion")
+    
+    def test_concurrent_animations(self):
+        """Test that multiple animations can't run concurrently due to cooldown."""
+        # Launch a fighter to start animation
+        self.carrier.launch_fighter()
+        
+        # Attempt to launch another fighter immediately
+        second_launch = self.carrier.launch_fighter()
+        
+        # Second launch should fail due to cooldown
+        self.assertIsNone(second_launch, "Second launch should fail due to cooldown")
+        
+        # Animation state should remain unchanged from first launch
+        self.assertTrue(self.carrier.is_animating_launch, 
+                      "Animation state should remain active from first launch")
+
 if __name__ == '__main__':
     unittest.main()

@@ -167,7 +167,8 @@ This file is the central source of truth for all project tasks, both open and co
     - [x] Create fighter storage system with capacity limits | Created: 2025-05-02 | Completed: 2025-05-02
     - [x] Implement launch points as configurable positions on carrier | Created: 2025-05-02 | Completed: 2025-05-02
     - [x] Add launch cooldown and queuing mechanism | Created: 2025-05-02 | Completed: 2025-05-02
-    - [ ] Create visual launch sequence animation | Created: 2025-05-01 | Completed: 
+    - [x] Write tests for visual launch sequence animation | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Implement visual launch sequence animation | Created: 2025-05-02 | Completed: 2025-05-02
 
 - [ ] **Implement Orderly Launch/Land Sequencing**
     - [ ] Write tests for sequential one-by-one launch procedure | Created: 2025-05-01 | Completed: 
