@@ -138,6 +138,7 @@ This file is the central source of truth for all project tasks, both open and co
     - [x] Implement Battlestar Galactica-styled sprite | Created: 2025-05-01 | Completed: 2025-05-02
     - [x] Add higher mass and momentum properties | Created: 2025-05-01 | Completed: 2025-05-02
     - [x] Create carrier sprite generator and placeholder graphics | Created: 2025-05-01 | Completed: 2025-05-02
+    - [x] Implement carrier rotation from aft end (back of ship) for realistic turning | Created: 2025-05-02 | Completed: 2025-05-02
 
 ### Work Log - Carrier Core Implementation
 - **Completed:** 2025-05-02
@@ -147,8 +148,8 @@ This file is the central source of truth for all project tasks, both open and co
 - **Next steps:** Implement the collision system enhancements and fighter management system to allow the carrier to store and launch fighter units.
 
 - [x] **Collision System Enhancements:**
-    - [x] Write tests for mass-based collision resolution | Created: 2025-05-01 | Completed: 2025-05-02
-    - [x] Implement mass-based collision resolution for large vs. small units | Created: 2025-05-01 | Completed: 2025-05-02
+    - [x] Add accurate sprite-based selection indication for carrier | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Implement realistic carrier collision and selection hitbox using sprite dimensions | Created: 2025-05-02 | Completed: 2025-05-02
     - [x] Test that smaller units are pushed more than larger units | Created: 2025-05-01 | Completed: 2025-05-02
     - [x] Add carrier proximity awareness for small units to avoid collisions | Created: 2025-05-01 | Completed: 2025-05-02
     - [x] Create visual indicators for imminent collisions | Created: 2025-05-01 | Completed: 2025-05-02

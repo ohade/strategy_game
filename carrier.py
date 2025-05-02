@@ -208,6 +208,44 @@ class Carrier(FriendlyUnit):
         
         # Return the rectangle
         return pygame.Rect(x, y, self.sprite_width, self.sprite_height)
+        
+    def set_rotation(self, new_rotation: float) -> None:
+        """Set the carrier's rotation while maintaining the aft end position.
+        
+        Unlike regular units that rotate around their center, the carrier rotates
+        around its aft (back) end, similar to how real ships turn.
+        
+        Args:
+            new_rotation: The new rotation angle in degrees
+        """
+        # Store the current rotation and calculate the change in rotation
+        old_rotation = self.rotation
+        rotation_change = new_rotation - old_rotation
+        
+        # Skip if there's no actual rotation change
+        if rotation_change == 0:
+            return
+        
+        # Calculate the position of the aft end (back of the ship)
+        # Since the carrier has front to the right (0 degrees), the aft is at negative x offset
+        aft_offset_x = -self.sprite_width / 2
+        
+        # Calculate current aft position in world coordinates
+        angle_rad = math.radians(old_rotation)
+        aft_world_x = self.world_x + aft_offset_x * math.cos(angle_rad)
+        aft_world_y = self.world_y + aft_offset_x * math.sin(angle_rad)
+        
+        # Set the new rotation
+        self.rotation = new_rotation
+        
+        # Calculate the new position for the carrier's center to maintain the aft position
+        new_angle_rad = math.radians(new_rotation)
+        new_aft_offset_x = aft_offset_x * math.cos(new_angle_rad)
+        new_aft_offset_y = aft_offset_x * math.sin(new_angle_rad)
+        
+        # Set the new center position that keeps the aft end stationary
+        self.world_x = aft_world_x - new_aft_offset_x
+        self.world_y = aft_world_y - new_aft_offset_y
     
     def draw(self, surface: pygame.Surface, camera: Camera) -> None:
         """Draw the carrier with its custom sprite.
