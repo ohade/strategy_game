@@ -104,8 +104,18 @@ class AssetManager:
         """Load ship sprites for different unit types."""
         # Load ship sprites
         try:
-            self.ship_sprites['friendly'] = load_image('friendly_ship.png', scale=1.0)
-            self.ship_sprites['enemy'] = load_image('enemy_ship.png', scale=1.0)
+            self.ship_sprites['friendly'] = load_image('friendly_ship.png', scale=0.05)
+            self.ship_sprites['enemy'] = load_image('enemy_ship.png', scale=0.05)
+            
+            # Try to load the carrier sprite
+            try:
+                self.ship_sprites['carrier'] = load_image('ships/carrier.png', scale=1.0)
+                print("Loaded carrier sprite successfully")
+            except FileNotFoundError:
+                print("Carrier sprite file not found, will use generated fallback")
+                # The carrier will use its own fallback generator if needed
+                pass
+                
         except FileNotFoundError:
             # Use placeholder graphics if files don't exist yet
             print("Ship sprite files not found, using placeholder graphics")
@@ -325,7 +335,7 @@ def get_ship_sprite(unit_type: str) -> pygame.Surface:
     """Get a ship sprite for the specified unit type.
     
     Args:
-        unit_type: Type of unit ('friendly' or 'enemy')
+        unit_type: Type of unit ('friendly', 'enemy', or 'carrier')
         
     Returns:
         The appropriate ship sprite

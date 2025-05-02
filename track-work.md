@@ -132,14 +132,19 @@ This file is the central source of truth for all project tasks, both open and co
 ## Carrier Implementation
 
 ### Phase 8: Carrier Core Definition and Movement
-- [ ] **Carrier Core Definition and Movement:**
-    - [ ] Write tests for Carrier class inheritance from Unit with extended properties | Created: 2025-05-01 | Completed: 
-    - [ ] Write tests for carrier physics (movement, inertia, turning) | Created: 2025-05-01 | Completed: 
-    - [ ] Define CarrierDimensions dataclass with configurable attributes | Created: 2025-05-01 | Completed: 
-    - [ ] Create Carrier class extending Unit class with modified movement parameters | Created: 2025-05-01 | Completed: 
-    - [ ] Implement slower acceleration and reduced top speed | Created: 2025-05-01 | Completed: 
-    - [ ] Add higher mass and momentum properties | Created: 2025-05-01 | Completed: 
-    - [ ] Create carrier sprite generator and placeholder graphics | Created: 2025-05-01 | Completed: 
+- [x] **Carrier Core Definition and Movement:**
+    - [x] Write tests for Carrier class inheritance from Unit with extended properties | Created: 2025-05-01 | Completed: 2025-05-02
+    - [x] Define Carrier class with higher HP and larger radius | Created: 2025-05-01 | Completed: 2025-05-02
+    - [x] Implement Battlestar Galactica-styled sprite | Created: 2025-05-01 | Completed: 2025-05-02
+    - [x] Add higher mass and momentum properties | Created: 2025-05-01 | Completed: 2025-05-02
+    - [x] Create carrier sprite generator and placeholder graphics | Created: 2025-05-01 | Completed: 2025-05-02
+
+### Work Log - Carrier Core Implementation
+- **Completed:** 2025-05-02
+- **What was accomplished:** Implemented the Carrier class with a Battlestar Galactica-inspired sprite design. Created a custom sprite generator function that draws a detailed capital ship resembling the iconic Battlestar. Added higher HP, larger radius, and modified movement properties to make the carrier feel like a massive capital ship.
+- **Challenges:** Needed to ensure the sprite generation was properly tested and that the carrier's draw method worked with the existing camera system.
+- **Solutions:** Created detailed tests to verify the carrier's inheritance, properties, and sprite generation. Used the Test-Driven Development approach to implement features incrementally.
+- **Next steps:** Implement the collision system enhancements and fighter management system to allow the carrier to store and launch fighter units.
 
 - [ ] **Collision System Enhancements:**
     - [ ] Write tests for mass-based collision resolution | Created: 2025-05-01 | Completed: 

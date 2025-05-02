@@ -58,6 +58,6 @@ pygame.draw.line(ship, (255, 150, 100), (40, 28), (24, 22), 1)
 pygame.draw.line(ship, (255, 150, 100), (40, 36), (24, 42), 1)
 
 # Save the image
-pygame.image.save(ship, "/Users/ohadedelstein/projects/playground/strategy_game/assets/ships/enemy_ship.png")
+pygame.image.save(ship, "/assets/ships/enemy_ship.png")
 
 print("Enemy ship sprite created at 'assets/ships/enemy_ship.png'")

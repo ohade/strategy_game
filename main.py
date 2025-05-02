@@ -10,6 +10,7 @@ from game_logic import update_targeting, update_effects, detect_unit_collision, 
 from input_handler import InputHandler  # Import the new handler
 from ui import UnitInfoPanel
 from units import Unit
+from carrier import Carrier  # Import our new Carrier class
 
 
 def main() -> None:
@@ -35,13 +36,15 @@ def main() -> None:
 
     # --- Create Units ---
     friendly_units: list[Unit] = [
+        # Create a carrier (Battlestar Galactica style)
+        Carrier(500, 300),
+        # Regular friendly units
         Unit(300, 300, 'friendly', attack_range=100),
         Unit(350, 350, 'friendly', attack_range=100),
-        Unit(350, 350, 'friendly', attack_range=100),
-        Unit(300, 300, 'friendly', attack_range=100),
-        Unit(350, 350, 'friendly', attack_range=100),
-        Unit(350, 350, 'friendly', attack_range=100),
-        Unit(350, 350, 'friendly', attack_range=100)
+        Unit(400, 350, 'friendly', attack_range=100),
+        Unit(300, 400, 'friendly', attack_range=100),
+        Unit(400, 300, 'friendly', attack_range=100),
+        Unit(450, 350, 'friendly', attack_range=100)
     ]
     enemy_units: list[Unit] = [
         Unit(800, 400, 'enemy'),
