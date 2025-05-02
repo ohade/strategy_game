@@ -413,8 +413,20 @@ class Carrier(FriendlyUnit):
         Returns:
             AttackEffect or None
         """
+        # Store the current rotation before parent update
+        old_rotation = self.rotation
+        
         # Use the parent class update method for base unit functionality
         attack_effect = super().update(dt)
+        
+        # Check if rotation has changed during the update
+        if self.rotation != old_rotation:
+            # If rotation was changed directly, use our set_rotation method instead
+            # First restore the old rotation
+            new_rotation_value = self.rotation
+            self.rotation = old_rotation
+            # Then use our custom rotation method that rotates from the aft
+            self.set_rotation(new_rotation_value)
         
         # Reset collision warnings at the start of each update
         self.collision_warnings = []
