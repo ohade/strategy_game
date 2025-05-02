@@ -286,6 +286,12 @@ This file is the central source of truth for all project tasks, both open and co
     - Files: `carrier.py`
     - Created: 2025-05-02
     - Completed: 2025-05-02
+    
+- ✅ **Task: Improve Carrier Hitbox for Selection and Collision**
+    - Description: Update the carrier's hitbox to match its sprite dimensions, allowing players to select it by clicking anywhere on the image rather than just the center point.
+    - Files: `carrier.py`
+    - Created: 2025-05-02
+    - Completed: 2025-05-02
 
 ### Phase 11: Control Group Management
 

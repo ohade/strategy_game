@@ -176,6 +176,28 @@ class Carrier(FriendlyUnit):
         
         # Custom sprite flag
         self.has_custom_sprite = True
+        
+        # Store actual sprite dimensions for accurate collision and selection
+        self.sprite = get_carrier_sprite()
+        self.sprite_width = self.sprite.get_width()
+        self.sprite_height = self.sprite.get_height()
+    
+    def get_rect(self) -> pygame.Rect:
+        """Get the carrier's rectangle based on its sprite dimensions.
+        
+        Returns:
+            A pygame Rect representing the carrier's hitbox
+        """
+        # Calculate the center of the sprite
+        center_x = self.world_x
+        center_y = self.world_y
+        
+        # Calculate the top-left corner of the sprite
+        x = center_x - self.sprite_width // 2
+        y = center_y - self.sprite_height // 2
+        
+        # Return the rectangle
+        return pygame.Rect(x, y, self.sprite_width, self.sprite_height)
     
     def draw(self, surface: pygame.Surface, camera: Camera) -> None:
         """Draw the carrier with its custom sprite.
