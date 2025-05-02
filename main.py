@@ -35,9 +35,15 @@ def main() -> None:
     input_handler = InputHandler()
 
     # --- Create Units ---
+    
+    # Create a carrier with one fighter inside it
+    carrier = Carrier(500, 300)  # Create carrier at position 500, 300
+    fighter_for_carrier = Unit(0, 0, 'friendly', attack_range=100)  # Create a fighter to store (position will be ignored)
+    carrier.store_fighter(fighter_for_carrier)  # Store the fighter in the carrier
+    
     friendly_units: list[Unit] = [
-        # Create a carrier (Battlestar Galactica style)
-        Carrier(500, 300),
+        # Add the carrier
+        carrier,
         # Regular friendly units
         Unit(300, 300, 'friendly', attack_range=100),
         Unit(350, 350, 'friendly', attack_range=100),
