@@ -528,6 +528,22 @@ class Carrier(FriendlyUnit):
             return False
             
         return True
+        
+    def get_direction_x(self) -> float:
+        """Get the X component of the carrier's direction vector based on rotation.
+        
+        Returns:
+            float: X component of direction vector (normalized)
+        """
+        return math.cos(math.radians(self.rotation))
+        
+    def get_direction_y(self) -> float:
+        """Get the Y component of the carrier's direction vector based on rotation.
+        
+        Returns:
+            float: Y component of direction vector (normalized)
+        """
+        return math.sin(math.radians(self.rotation))
 
     def launch_fighter(self, position: Optional[Tuple[float, float]] = None) -> Optional[Unit]:
         """Launch a stored fighter at the specified position.

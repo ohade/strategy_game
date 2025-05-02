@@ -211,9 +211,16 @@ This file is the central source of truth for all project tasks, both open and co
     - [x] Write tests for UI button for launching fighters | Created: 2025-05-02 | Completed: 2025-05-02
     - [x] Implement UI button for launching fighters when carrier is selected | Created: 2025-05-02 | Completed: 2025-05-02
     - [ ] Create visual indicators for available/cooldown launch points | Created: 2025-05-02 | Completed: 
-    - [ ] Write tests for fighter return-to-carrier commands | Created: 2025-05-02 | Completed: 
-    - [ ] Implement right-click command to send fighters back to carrier | Created: 2025-05-02 | Completed: 
+    - [x] Write tests for fighter return-to-carrier commands | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Implement right-click command to send fighters back to carrier | Created: 2025-05-02 | Completed: 2025-05-02
     - [ ] Add visual indicators for fighters targeted to land | Created: 2025-05-02 | Completed: 
+
+## Work Log for Fighter Return-to-Carrier Commands
+- **Completed:** 2025-05-02
+- **What was accomplished:** Successfully implemented the ability for players to right-click on carriers to send selected fighters back for docking and storage. Added a multi-stage landing sequence (approach, align, land, store) with smooth animations.
+- **Challenges:** Needed to carefully handle the different states of the landing sequence and integrate this with the existing movement system. Also had to ensure proper detection of right-clicks on carriers.
+- **Solutions implemented:** Created a comprehensive landing state machine in the FriendlyUnit class, extended the InputHandler to detect clicks on carriers, and added special visual indicators for return commands. Implemented carrier position approach, orientation alignment, and fade-out effects during landing.
+- **Next steps:** Implement visual indicators for fighters targeted to land and ensure the carriers have appropriate animations for receiving fighters.
     - [ ] Create automated landing sequence when fighters approach carrier | Created: 2025-05-02 | Completed: 
 
 - [ ] **Landing and Docking System:**

@@ -356,9 +356,14 @@ class Unit:
         # Use the game_logic module for attack handling instead of inline logic
         if self.state == "attacking":
             attack_effect_generated = update_unit_attack(self, dt)
+            
+        # Handle carrier return behavior for FriendlyUnit instances
+        if isinstance(self, FriendlyUnit) and hasattr(self, 'is_returning_to_carrier') and self.is_returning_to_carrier:
+            # Call the carrier return update logic
+            self.update_carrier_return(dt)
 
         return attack_effect_generated # Return effect if created, else None
-
+        
     def attack(self, target: Unit) -> None:
         """Command the unit to attack another unit.
 
@@ -442,6 +447,101 @@ class Unit:
 class FriendlyUnit(Unit):
     def __init__(self, world_x: int, world_y: int):
         super().__init__(world_x, world_y, unit_type='friendly')
+        # Carrier-related attributes
+        self.target_carrier = None  # Reference to carrier this fighter is returning to
+        self.is_returning_to_carrier = False  # Flag to indicate return mode
+        self.landing_stage = "approach"  # approach, align, land, store
+        self.landing_timer = 0.0  # Timer for landing sequence phases
+        
+    def get_direction_x(self) -> float:
+        """Get the X component of the unit's direction vector based on rotation.
+        
+        Returns:
+            float: X component of direction vector (normalized)
+        """
+        return math.cos(math.radians(self.rotation))
+        
+    def get_direction_y(self) -> float:
+        """Get the Y component of the unit's direction vector based on rotation.
+        
+        Returns:
+            float: Y component of direction vector (normalized)
+        """
+        return math.sin(math.radians(self.rotation))
+        
+    def update_carrier_return(self, dt: float) -> None:
+        """Update the fighter's return-to-carrier behavior.
+        
+        This method handles the different stages of returning to a carrier:
+        - Approach: Move to a point near the carrier
+        - Align: Rotate to match carrier's orientation
+        - Land: Move onto the carrier's deck
+        - Store: Add fighter to carrier's stored_fighters list
+        
+        Args:
+            dt: Time delta in seconds
+        """
+        if not self.is_returning_to_carrier or not self.target_carrier:
+            return
+            
+        # Check if we've reached the carrier during any stage
+        distance_to_carrier = math.hypot(
+            self.world_x - self.target_carrier.world_x,
+            self.world_y - self.target_carrier.world_y
+        )
+        
+        # Update based on landing stage
+        if self.landing_stage == "approach":
+            # Check if we've reached the approach point
+            if distance_to_carrier <= self.target_carrier.radius * 2.5:
+                self.landing_stage = "align"
+                self.landing_timer = 0.0
+                
+        elif self.landing_stage == "align":
+            # Align with carrier orientation (opposite direction to match docking)
+            target_rotation = (self.target_carrier.rotation + 180) % 360
+            rotation_diff = (target_rotation - self.rotation + 180) % 360 - 180
+            
+            # Rotate smoothly toward target rotation
+            rotation_step = min(self.max_rotation_speed * dt, abs(rotation_diff))
+            if rotation_diff > 0:
+                self.rotation += rotation_step
+            else:
+                self.rotation -= rotation_step
+                
+            # Keep rotation in 0-360 range
+            self.rotation = self.rotation % 360
+            
+            # Check if aligned (within tolerance)
+            if abs(rotation_diff) < 10:  # 10 degree tolerance
+                self.landing_stage = "land"
+                self.landing_timer = 0.0
+                
+        elif self.landing_stage == "land":
+            # Move toward carrier center
+            self.velocity_x = self.target_carrier.get_direction_x() * -30  # Slow approach
+            self.velocity_y = self.target_carrier.get_direction_y() * -30
+            
+            # Apply carrier velocity to match speed
+            self.velocity_x += self.target_carrier.velocity_x
+            self.velocity_y += self.target_carrier.velocity_y
+            
+            # Fade out during landing
+            self.opacity = max(0, self.opacity - int(255 * dt))
+            
+            # Check if close enough to carrier to be stored
+            if distance_to_carrier <= self.target_carrier.radius * 0.8:
+                self.landing_stage = "store"
+                
+        elif self.landing_stage == "store":
+            # Try to store the fighter in the carrier
+            if self.target_carrier.store_fighter(self):
+                # Reset state since the fighter is now stored
+                self.is_returning_to_carrier = False
+                self.target_carrier = None
+                self.landing_stage = "approach"
+                self.opacity = 0  # Completely invisible
+                # Main loop will need to remove this fighter from the active units list
 
 class EnemyUnit(Unit):
     def __init__(self, world_x: int, world_y: int):

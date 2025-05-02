@@ -137,10 +137,34 @@ class InputHandler:
                     target_world_x, target_world_y = camera.screen_to_world_coords(click_screen_pos[0], click_screen_pos[1])
                     destination_indicators.clear() # Clear previous indicators
                     
-                    # Check for enemies near the click point using smart targeting
-                    # Convert screen click to world coordinates for targeting
+                    # Check if clicked on a carrier to return fighters
+                    clicked_carrier = None
+                    for unit in all_units:
+                        if isinstance(unit, Carrier):
+                            # Get world rect and check if clicked point is inside
+                            world_rect = unit.get_rect()
+                            if world_rect.collidepoint((target_world_x, target_world_y)):
+                                clicked_carrier = unit
+                                break
                     
-                    # Define targeting radius (adjust as needed for gameplay balance)
+                    # If clicked on a carrier, check if selected units should return to it
+                    if clicked_carrier and all(isinstance(unit, FriendlyUnit) for unit in selected_units):
+                        # Process fighter return command using game_input
+                        target_world_pos = (target_world_x, target_world_y)
+                        return_successful = self.game_input.process_return_to_carrier_command(
+                            selected_units, 
+                            clicked_carrier,
+                            target_world_pos
+                        )
+                        
+                        if return_successful:
+                            # Add a visual indicator on the carrier
+                            indicator = DestinationIndicator(clicked_carrier.world_x, clicked_carrier.world_y, color=(0, 200, 200))  # Cyan indicator for return
+                            destination_indicators.append(indicator)
+                            continue  # Skip the regular command processing below
+                    
+                    # Check for enemies near the click point using smart targeting
+                    # Define targeting radius
                     TARGETING_RADIUS = 50
                     
                     # Find enemies within the targeting radius
@@ -154,6 +178,11 @@ class InputHandler:
                     for i, unit in enumerate(selected_units):
                         # Ensure only friendly units receive commands
                         if unit.type == 'friendly':
+                            # Reset carrier return flags when giving a new command
+                            if hasattr(unit, 'is_returning_to_carrier') and unit.is_returning_to_carrier:
+                                unit.is_returning_to_carrier = False
+                                unit.target_carrier = None
+                                
                             if clicked_enemy:  # If clicked on enemy, attack it
                                 unit.attack(clicked_enemy)
                                 # Add a visual indicator on the enemy
