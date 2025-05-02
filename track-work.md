@@ -209,7 +209,7 @@ This file is the central source of truth for all project tasks, both open and co
     - [x] Write tests for player-initiated fighter launches | Created: 2025-05-02 | Completed: 2025-05-02
     - [x] Implement keyboard shortcut for launching fighters from selected carrier | Created: 2025-05-02 | Completed: 2025-05-02
     - [x] Write tests for UI button for launching fighters | Created: 2025-05-02 | Completed: 2025-05-02
-    - [ ] Implement UI button for launching fighters when carrier is selected | Created: 2025-05-02 | Completed: 
+    - [x] Implement UI button for launching fighters when carrier is selected | Created: 2025-05-02 | Completed: 2025-05-02
     - [ ] Create visual indicators for available/cooldown launch points | Created: 2025-05-02 | Completed: 
     - [ ] Write tests for fighter return-to-carrier commands | Created: 2025-05-02 | Completed: 
     - [ ] Implement right-click command to send fighters back to carrier | Created: 2025-05-02 | Completed: 

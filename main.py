@@ -8,8 +8,8 @@ from constants import *  # Import all constants
 from effects import DestinationIndicator, ExplosionEffect  # Import the effect classes
 from game_logic import update_targeting, update_effects, detect_unit_collision, resolve_collision_with_mass
 from input_handler import InputHandler  # Import the new handler
-from ui import UnitInfoPanel
-from units import Unit
+from ui import UnitInfoPanel, CarrierPanel  # Import both UI panels
+from units import Unit, FriendlyUnit  # Import both unit classes for type checking
 from carrier import Carrier  # Import our new Carrier class
 
 
@@ -29,6 +29,7 @@ def main() -> None:
     
     # Create UI components
     unit_info_panel = UnitInfoPanel(SCREEN_WIDTH)
+    carrier_panel = CarrierPanel(SCREEN_WIDTH)
     effects: list = [] # List to hold all active effects (attack, explosion, etc.)
     
     # --- Create Input Handler ---
@@ -39,27 +40,34 @@ def main() -> None:
     # Create a carrier with one fighter inside it
     carrier = Carrier(500, 300)  # Create carrier at position 500, 300
     fighter_for_carrier = Unit(0, 0, 'friendly', attack_range=100)  # Create a fighter to store (position will be ignored)
-    carrier.store_fighter(fighter_for_carrier)  # Store the fighter in the carrier
+    carrier.store_fighter(fighter_for_carrier)
+    # fighter_for_carrier = Unit(0, 0, 'friendly',
+    #                            attack_range=100)  # Create a fighter to store (position will be ignored)
+    # carrier.store_fighter(fighter_for_carrier)
+    # fighter_for_carrier = Unit(0, 0, 'friendly',
+    #                            attack_range=100)  # Create a fighter to store (position will be ignored)
+    # carrier.store_fighter(fighter_for_carrier)
+    # Store the fighter in the carrier
     
     friendly_units: list[Unit] = [
         # Add the carrier
         carrier,
         # Regular friendly units
-        Unit(300, 300, 'friendly', attack_range=100),
-        Unit(350, 350, 'friendly', attack_range=100),
-        Unit(400, 350, 'friendly', attack_range=100),
-        Unit(300, 400, 'friendly', attack_range=100),
-        Unit(400, 300, 'friendly', attack_range=100),
-        Unit(450, 350, 'friendly', attack_range=100)
+        # Unit(300, 300, 'friendly', attack_range=100),
+        # Unit(350, 350, 'friendly', attack_range=100),
+        # Unit(400, 350, 'friendly', attack_range=100),
+        # Unit(300, 400, 'friendly', attack_range=100),
+        # Unit(400, 300, 'friendly', attack_range=100),
+        # Unit(450, 350, 'friendly', attack_range=100)
     ]
     enemy_units: list[Unit] = [
-        Unit(800, 400, 'enemy'),
-        Unit(900, 500, 'enemy'),
-        Unit(850, 450, 'enemy'),
-        Unit(950, 550, 'enemy'),
-        Unit(750, 350, 'enemy'),
-        Unit(870, 470, 'enemy'),
-        Unit(930, 430, 'enemy')
+        # Unit(800, 400, 'enemy'),
+        # Unit(900, 500, 'enemy'),
+        # Unit(850, 450, 'enemy'),
+        # Unit(950, 550, 'enemy'),
+        # Unit(750, 350, 'enemy'),
+        # Unit(870, 470, 'enemy'),
+        # Unit(930, 430, 'enemy')
     ]
     all_units: list[Unit] = friendly_units + enemy_units
 
@@ -84,7 +92,30 @@ def main() -> None:
         keys = pygame.key.get_pressed() # Get current key states
         mouse_pos = pygame.mouse.get_pos()
         
-        # Call the input handler to process events and update state
+        # Update carrier panel's selected carrier if carrier is in selected units
+        selected_carrier = None
+        for unit in selected_units:
+            if isinstance(unit, Carrier):
+                selected_carrier = unit
+                carrier_panel.set_selected_carrier(unit)
+                break
+                
+        # Process UI panel clicks without consuming keyboard events
+        ui_consumed_click = False
+        for event in events:
+            # Only process mouse clicks here, leave keyboard events for input handler
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left click
+                # Check if we have a selected carrier and the click is on the panel
+                if selected_carrier:
+                    # Try to handle the click in the carrier panel
+                    launched_fighter = carrier_panel.handle_click(mouse_pos)
+                    if launched_fighter:
+                        # Add the launched fighter to friendly units
+                        friendly_units.append(launched_fighter)
+                        all_units.append(launched_fighter)
+                        ui_consumed_click = True
+        
+        # Call the input handler to process events and update state if UI didn't consume the click
         running, selected_units, destination_indicators, \
         is_dragging, drag_start_pos, drag_current_pos = \
             input_handler.process_input(
@@ -192,6 +223,12 @@ def main() -> None:
         if selected_units:
             mouse_pos = pygame.mouse.get_pos()
             unit_info_panel.draw(screen, selected_units, mouse_pos)
+            
+            # --- Draw Carrier Panel (if a carrier is selected) ---
+            for unit in selected_units:
+                if isinstance(unit, Carrier):
+                    carrier_panel.draw(screen, friendly_units)
+                    break
             
         # --- Draw Selection Box (if currently dragging) ---
         if is_dragging and drag_start_pos and drag_current_pos:
