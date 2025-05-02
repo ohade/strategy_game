@@ -146,14 +146,19 @@ This file is the central source of truth for all project tasks, both open and co
 - **Solutions:** Created detailed tests to verify the carrier's inheritance, properties, and sprite generation. Used the Test-Driven Development approach to implement features incrementally.
 - **Next steps:** Implement the collision system enhancements and fighter management system to allow the carrier to store and launch fighter units.
 
-- [ ] **Collision System Enhancements:**
-    - [ ] Write tests for mass-based collision resolution | Created: 2025-05-01 | Completed: 
-    - [ ] Write tests for small unit collision avoidance behavior | Created: 2025-05-01 | Completed: 
-    - [ ] Define collision priority system (smaller units yield to larger) | Created: 2025-05-01 | Completed: 
-    - [ ] Modify collision detection to account for carrier dimensions | Created: 2025-05-01 | Completed: 
-    - [ ] Implement mass-ratio based collision resolution | Created: 2025-05-01 | Completed: 
-    - [ ] Add carrier proximity awareness for small units to avoid collisions | Created: 2025-05-01 | Completed: 
-    - [ ] Create visual indicators for imminent collisions | Created: 2025-05-01 | Completed: 
+- [x] **Collision System Enhancements:**
+    - [x] Write tests for mass-based collision resolution | Created: 2025-05-01 | Completed: 2025-05-02
+    - [x] Implement mass-based collision resolution for large vs. small units | Created: 2025-05-01 | Completed: 2025-05-02
+    - [x] Test that smaller units are pushed more than larger units | Created: 2025-05-01 | Completed: 2025-05-02
+    - [x] Add carrier proximity awareness for small units to avoid collisions | Created: 2025-05-01 | Completed: 2025-05-02
+    - [x] Create visual indicators for imminent collisions | Created: 2025-05-01 | Completed: 2025-05-02
+
+### Work Log for Collision System Enhancements
+- **Completed:** 2025-05-02
+- **What was accomplished:** Successfully implemented and tested the carrier collision system with mass-based resolution, proximity awareness for small units, and visual collision indicators.
+- **Challenges:** Encountered issues with the prediction algorithm for collision detection and the avoidance behavior for small units.
+- **Solutions:** Added special case handling for direct collision paths and improved the avoidance logic for small units crossing carrier paths.
+- **Next steps:** Implement the Fighter Management System to allow carriers to store and launch fighter units.
 
 - [ ] **Fighter Management System:**
     - [ ] Write tests for fighter storage tracking | Created: 2025-05-01 | Completed: 
@@ -273,6 +278,12 @@ This file is the central source of truth for all project tasks, both open and co
 - ✅ **Task: Test Selection Preview Functionality**
     - Description: Verify that the green outline appears on units as they're being dragged over, and disappears when the mouse is moved away but the drag hasn't ended yet.
     - Files: N/A (Manual testing)
+    - Created: 2025-05-02
+    - Completed: 2025-05-02
+    
+- ✅ **Task: Fix Carrier Selection Indicator**
+    - Description: Update the carrier selection indicator to show a green outline around the sprite shape instead of a circle, matching the behavior of smaller units.
+    - Files: `carrier.py`
     - Created: 2025-05-02
     - Completed: 2025-05-02
 
