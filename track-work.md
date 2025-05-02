@@ -161,12 +161,12 @@ This file is the central source of truth for all project tasks, both open and co
 - **Next steps:** Implement the Fighter Management System to allow carriers to store and launch fighter units.
 
 - [ ] **Fighter Management System:**
-    - [ ] Write tests for fighter storage tracking | Created: 2025-05-01 | Completed: 
-    - [ ] Write tests for launch point configuration and functionality | Created: 2025-05-01 | Completed: 
-    - [ ] Define tests for fighter launch sequence and cooldowns | Created: 2025-05-01 | Completed: 
-    - [ ] Create fighter storage system with capacity limits | Created: 2025-05-01 | Completed: 
-    - [ ] Implement launch points as configurable positions on carrier | Created: 2025-05-01 | Completed: 
-    - [ ] Add launch cooldown and queuing mechanism | Created: 2025-05-01 | Completed: 
+    - [x] Write tests for fighter storage tracking | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Write tests for launch point configuration and functionality | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Define tests for fighter launch sequence and cooldowns | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Create fighter storage system with capacity limits | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Implement launch points as configurable positions on carrier | Created: 2025-05-02 | Completed: 2025-05-02
+    - [x] Add launch cooldown and queuing mechanism | Created: 2025-05-02 | Completed: 2025-05-02
     - [ ] Create visual launch sequence animation | Created: 2025-05-01 | Completed: 
 
 - [ ] **Implement Orderly Launch/Land Sequencing**
@@ -190,11 +190,20 @@ This file is the central source of truth for all project tasks, both open and co
 - [ ] **Carrier UI and Controls:**
     - [ ] Write tests for carrier selection UI events | Created: 2025-05-01 | Completed: 
     - [ ] Write tests for fighter status display functionality | Created: 2025-05-01 | Completed: 
-    - [ ] Test launch command interface | Created: 2025-05-01 | Completed: 
-    - [ ] Create dedicated carrier information panel showing stats | Created: 2025-05-01 | Completed: 
-    - [ ] Implement fighter inventory display with status indicators | Created: 2025-05-01 | Completed: 
-    - [ ] Add fighter launch controls (individual/group/all options) | Created: 2025-05-01 | Completed: 
-    - [ ] Create visual indicators for available/cooldown launch points | Created: 2025-05-01 | Completed: 
+    - [ ] Implement carrier selection panel | Created: 2025-05-01 | Completed: 
+    - [ ] Create fighter bay status display | Created: 2025-05-01 | Completed: 
+    - [ ] Add right-click contextual actions for carrier interaction | Created: 2025-05-01 | Completed: 
+    - [ ] Create visual feedback for command acceptance | Created: 2025-05-01 | Completed: 
+
+- [ ] **Player Controls for Carrier Operations:**
+    - [ ] Write tests for player-initiated fighter launches | Created: 2025-05-02 | Completed: 
+    - [ ] Implement keyboard shortcut for launching fighters from selected carrier | Created: 2025-05-02 | Completed: 
+    - [ ] Create UI button for launching fighters when carrier is selected | Created: 2025-05-02 | Completed: 
+    - [ ] Create visual indicators for available/cooldown launch points | Created: 2025-05-02 | Completed: 
+    - [ ] Write tests for fighter return-to-carrier commands | Created: 2025-05-02 | Completed: 
+    - [ ] Implement right-click command to send fighters back to carrier | Created: 2025-05-02 | Completed: 
+    - [ ] Add visual indicators for fighters targeted to land | Created: 2025-05-02 | Completed: 
+    - [ ] Create automated landing sequence when fighters approach carrier | Created: 2025-05-02 | Completed: 
 
 - [ ] **Landing and Docking System:**
     - [ ] Write tests for landing approach logic | Created: 2025-05-01 | Completed: 

@@ -174,6 +174,10 @@ class Carrier(FriendlyUnit):
         self.is_recovering = False
         self.current_operation = None  # Track current launch/recover operation
         
+        # Launch cooldown mechanics
+        self.launch_cooldown = 1.0  # 1 second cooldown between fighter launches
+        self.current_launch_cooldown = 0.0  # No cooldown initially (ready to launch)
+        
         # Custom sprite flag
         self.has_custom_sprite = True
         
@@ -322,6 +326,16 @@ class Carrier(FriendlyUnit):
         # Reset collision warnings at the start of each update
         self.collision_warnings = []
         
+        # Update launch cooldown timer
+        if self.current_launch_cooldown > 0:
+            # Decrease cooldown by time delta
+            self.current_launch_cooldown -= dt
+            # Ensure it doesn't go below 0
+            if self.current_launch_cooldown < 0:
+                self.current_launch_cooldown = 0.0
+                # Reset launching flag when cooldown expires
+                self.is_launching = False
+        
         # The carrier has the front to the right (opposite from normal units)
         # We handle the rotation adjustment in the draw method by adding 180 degrees
         
@@ -431,11 +445,18 @@ class Carrier(FriendlyUnit):
                      If None, launches from a default launch point
                      
         Returns:
-            The launched fighter unit or None if no fighters available
+            The launched fighter unit or None if no fighters available or on cooldown
         """
+        # Check if there are any fighters to launch
         if not self.stored_fighters:
             return None
+        
+        # Check if carrier is on launch cooldown
+        if self.current_launch_cooldown > 0:
+            # Cannot launch while on cooldown
+            return None
             
+        # Get a fighter from storage
         fighter = self.stored_fighters.pop()
         
         # Determine launch position
@@ -459,5 +480,11 @@ class Carrier(FriendlyUnit):
         
         # Reactivate the fighter (in case we had deactivated it)
         fighter.set_state("idle")
+        
+        # Set the launch cooldown
+        self.current_launch_cooldown = self.launch_cooldown
+        
+        # Flag the carrier as currently launching
+        self.is_launching = True
         
         return fighter
