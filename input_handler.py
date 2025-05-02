@@ -6,8 +6,10 @@ import pygame
 from camera import Camera
 from effects import DestinationIndicator
 from game_logic import find_enemies_in_radius, get_closest_enemy_to_point
+from game_input import GameInput  # Import the new GameInput class
 from ui import UnitInfoPanel
-from units import Unit
+from units import Unit, FriendlyUnit
+from carrier import Carrier  # Explicitly import Carrier
 
 
 class InputHandler:
@@ -18,6 +20,9 @@ class InputHandler:
         self.is_dragging: bool = False
         self.drag_start_pos: Optional[Tuple[int, int]] = None
         self.drag_current_pos: Optional[Tuple[int, int]] = None
+        
+        # Initialize the game input handler for specialized operations
+        self.game_input = GameInput()
 
     def process_input(
         self,
@@ -54,6 +59,7 @@ class InputHandler:
             - drag_current_pos (Optional[Tuple[int, int]]): Drag current position.
         """
         running = True
+        launched_fighter = None  # Track if a fighter was launched this frame
         
         # --- Update Camera Panning (based on keys pressed this frame) --- #
         # This logic is now handled below within the continuous key check
@@ -203,6 +209,18 @@ class InputHandler:
                 self.drag_start_pos = None
                 self.drag_current_pos = None
 
+            # --- Keyboard Events for Carrier Operations ---
+            elif event.type == pygame.KEYDOWN:
+                # Filter the carrier units from all_units
+                carriers = [unit for unit in all_units if isinstance(unit, Carrier)]
+                
+                # Process carrier keyboard commands
+                fighter = self.game_input.process_carrier_key_command(event, carriers)
+                if fighter:
+                    launched_fighter = fighter
+                    # Add the launched fighter to all_units list
+                    all_units.append(fighter)
+            
             # --- Mouse Motion Events --- 
             elif event.type == pygame.MOUSEMOTION:
                 if self.is_dragging:
