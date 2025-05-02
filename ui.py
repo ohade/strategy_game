@@ -238,7 +238,7 @@ class UnitInfoPanel:
 class CarrierPanel:
     """Specialized panel for carrier units with fighter launch controls."""
     
-    def __init__(self, screen_width: int, panel_height: int = 150):
+    def __init__(self, screen_width: int, panel_height: int = 180):
         """Initialize the carrier control panel.
         
         Args:
@@ -247,7 +247,7 @@ class CarrierPanel:
         """
         self.screen_width = screen_width
         self.panel_width = screen_width // 3  # Take up 1/3 of the screen width
-        self.panel_height = panel_height  # Increased from 120 to 150 for more space
+        self.panel_height = panel_height  # Increased to 180 for more space
         
         # Panel appearance
         self.panel_color = (20, 35, 50, 200)  # Dark blue-gray with transparency
@@ -273,7 +273,7 @@ class CarrierPanel:
         
         # Launch button properties
         self.launch_button_rect: Optional[pygame.Rect] = None
-        self.button_width = 140  # Slightly narrower for better fit
+        self.button_width = 130  # Narrower for better fit
         self.button_height = 35  # Slightly smaller height
         
         # Panel position
@@ -318,27 +318,27 @@ class CarrierPanel:
                          pygame.Rect(0, 0, self.panel_width, self.panel_height), 2)
         
         # Panel content
-        padding = 15
-        y_offset = 15  # Start a bit lower from the top
+        padding = 20
+        y_offset = 20  # Start with more padding from the top
         
         # Title
         title_text = "Carrier Control"
         title_surface = self.title_font.render(title_text, True, self.title_color)
         self.panel_surface.blit(title_surface, (padding, y_offset))
-        y_offset += 35  # Increased spacing after title
+        y_offset += 40  # More spacing after title
         
         # Fighter status
         fighters_text = f"Fighters: {len(self.selected_carrier.stored_fighters)}/{self.selected_carrier.fighter_capacity}"
         fighters_surface = self.info_font.render(fighters_text, True, self.text_color)
         self.panel_surface.blit(fighters_surface, (padding, y_offset))
-        y_offset += 30  # Increased spacing between items
+        y_offset += 35  # More spacing between items
         
         # Cooldown status
         cooldown_text = "Launch Ready" if self.selected_carrier.current_launch_cooldown <= 0 else f"Cooldown: {self.selected_carrier.current_launch_cooldown:.1f}s"
         cooldown_color = (0, 200, 0) if self.selected_carrier.current_launch_cooldown <= 0 else (200, 200, 0)
         cooldown_surface = self.info_font.render(cooldown_text, True, cooldown_color)
         self.panel_surface.blit(cooldown_surface, (padding, y_offset))
-        y_offset += 40  # More space before the button
+        y_offset += 45  # Much more space before the button
         
         # Launch button
         button_x = (self.panel_width - self.button_width) // 2
