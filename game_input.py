@@ -58,8 +58,8 @@ class GameInput:
             bool: True if the return command was successful for any unit, False otherwise
         """
         # Check if carrier has capacity for at least one fighter
-        available_capacity = carrier.fighter_capacity - len(carrier.stored_fighters)
-        if available_capacity <= 0:
+        if not carrier.can_land_fighter():
+            print(f"Carrier at maximum capacity: {len(carrier.stored_fighters)}/{carrier.fighter_capacity}")
             return False
             
         # Count how many fighters will be returning to this carrier
@@ -67,15 +67,18 @@ class GameInput:
         
         # Mark each selected fighter to return to this carrier
         for unit in selected_units:
-            # Only friendly units can be ordered to return to carrier
-            if isinstance(unit, FriendlyUnit):
-                # Add target_carrier attribute to the fighter
+            # Only fighters can be ordered to return to carrier (not carriers themselves)
+            if isinstance(unit, FriendlyUnit) and unit != carrier:  # Prevent self-landing
+                # Store the carrier reference for landing checks
                 unit.target_carrier = carrier
                 unit.is_returning_to_carrier = True
-                # Set the approach point (slightly in front of carrier based on its orientation)
-                approach_distance = carrier.radius * 2
+                
+                # Set the approach point - directly in front of carrier
+                approach_distance = carrier.radius * 1.5  # Closer approach point
                 approach_x = carrier.world_x + approach_distance * carrier.get_direction_x()
                 approach_y = carrier.world_y + approach_distance * carrier.get_direction_y()
+                
+                # Move to the approach point
                 unit.move_to_point(approach_x, approach_y)
                 
                 # Add to our tracking list
@@ -83,6 +86,8 @@ class GameInput:
                 
                 # Stop targeting enemies when returning to carrier
                 unit.target = None
+                
+                print(f"Fighter {id(unit)} ordered to return to carrier {id(carrier)}")
         
         # Return True if any fighters were commanded to return
         return len(returning_fighters) > 0

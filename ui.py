@@ -4,7 +4,7 @@ from typing import List, Tuple, Optional, Callable
 
 import pygame
 
-from units import Unit
+from units import Unit, FriendlyUnit
 from carrier import Carrier
 
 
@@ -395,7 +395,13 @@ class CarrierPanel:
             self.launch_button_rect.collidepoint(mouse_pos) and 
             self.selected_carrier.can_launch_fighter()):
             
-            # Launch a fighter
-            return self.selected_carrier.launch_fighter()
+            # Queue a launch request instead of directly launching
+            success = self.selected_carrier.queue_launch_request()
+            if success:
+                # Create a dummy fighter to return so the UI knows a launch was queued
+                # This will be replaced by the actual launched fighter in the game loop
+                dummy = FriendlyUnit(0, 0)  # Position doesn't matter, this is just a signal
+                dummy.is_dummy = True  # Mark as dummy so we can identify it later
+                return dummy
         
-        return None  # No fighter launched
+            return None  # No fighter launched

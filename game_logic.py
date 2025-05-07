@@ -238,6 +238,9 @@ def detect_unit_collision(unit1: Any, unit2: Any) -> bool:
     or equal to the sum of their radii. This implements a simple circle-circle
     collision detection.
     
+    If either unit has collision_enabled set to False, no collision will be detected.
+    This is used during landing operations to allow fighters to land on carriers.
+    
     Args:
         unit1: First unit (must have world_x, world_y, and radius attributes)
         unit2: Second unit (must have world_x, world_y, and radius attributes)
@@ -245,14 +248,18 @@ def detect_unit_collision(unit1: Any, unit2: Any) -> bool:
     Returns:
         bool: True if units are colliding, False otherwise
     """
-    # Calculate distance between unit centers
-    distance = math.hypot(unit2.world_x - unit1.world_x, unit2.world_y - unit1.world_y)
+    # Check if either unit has collision disabled
+    if hasattr(unit1, 'collision_enabled') and not unit1.collision_enabled:
+        return False
+    if hasattr(unit2, 'collision_enabled') and not unit2.collision_enabled:
+        return False
     
-    # Determine combined radius (collision threshold)
-    combined_radius = unit1.radius + unit2.radius
+    # Calculate distance between centers
+    distance = math.hypot(unit2.world_x - unit1.world_x, 
+                          unit2.world_y - unit1.world_y)
     
-    # Collision occurs when distance <= combined radius
-    return distance <= combined_radius
+    # Check if distance is less than or equal to sum of radii
+    return distance <= (unit1.radius + unit2.radius)
 
 
 def find_enemies_in_radius(click_pos: Tuple[float, float], enemy_units: List[Any], radius: float) -> List[Any]:

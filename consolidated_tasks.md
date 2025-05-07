@@ -132,65 +132,38 @@ This file is the central source of truth for all project tasks, both open and co
 ## Carrier Implementation
 
 ### Phase 8: Carrier Core Definition and Movement
-- [x] **Carrier Core Definition and Movement:**
-    - [x] Write tests for Carrier class inheritance from Unit with extended properties | Created: 2025-05-01 | Completed: 2025-05-02
-    - [x] Define Carrier class with higher HP and larger radius | Created: 2025-05-01 | Completed: 2025-05-02
-    - [x] Implement Battlestar Galactica-styled sprite | Created: 2025-05-01 | Completed: 2025-05-02
-    - [x] Add higher mass and momentum properties | Created: 2025-05-01 | Completed: 2025-05-02
-    - [x] Create carrier sprite generator and placeholder graphics | Created: 2025-05-01 | Completed: 2025-05-02
+- [ ] **Carrier Core Definition and Movement:**
+    - [ ] Write tests for Carrier class inheritance from Unit with extended properties | Created: 2025-05-01 | Completed: 
+    - [ ] Write tests for carrier physics (movement, inertia, turning) | Created: 2025-05-01 | Completed: 
+    - [ ] Define CarrierDimensions dataclass with configurable attributes | Created: 2025-05-01 | Completed: 
+    - [ ] Create Carrier class extending Unit class with modified movement parameters | Created: 2025-05-01 | Completed: 
+    - [ ] Implement slower acceleration and reduced top speed | Created: 2025-05-01 | Completed: 
+    - [ ] Add higher mass and momentum properties | Created: 2025-05-01 | Completed: 
+    - [ ] Create carrier sprite generator and placeholder graphics | Created: 2025-05-01 | Completed: 
 
-### Work Log - Carrier Core Implementation
-- **Completed:** 2025-05-02
-- **What was accomplished:** Implemented the Carrier class with a Battlestar Galactica-inspired sprite design. Created a custom sprite generator function that draws a detailed capital ship resembling the iconic Battlestar. Added higher HP, larger radius, and modified movement properties to make the carrier feel like a massive capital ship.
-- **Challenges:** Needed to ensure the sprite generation was properly tested and that the carrier's draw method worked with the existing camera system.
-- **Solutions:** Created detailed tests to verify the carrier's inheritance, properties, and sprite generation. Used the Test-Driven Development approach to implement features incrementally.
-- **Next steps:** Implement the collision system enhancements and fighter management system to allow the carrier to store and launch fighter units.
-
-- [x] **Collision System Enhancements:**
-    - [x] Write tests for mass-based collision resolution | Created: 2025-05-01 | Completed: 2025-05-02
-    - [x] Implement mass-based collision resolution for large vs. small units | Created: 2025-05-01 | Completed: 2025-05-02
-    - [x] Test that smaller units are pushed more than larger units | Created: 2025-05-01 | Completed: 2025-05-02
-    - [x] Add carrier proximity awareness for small units to avoid collisions | Created: 2025-05-01 | Completed: 2025-05-02
-    - [x] Create visual indicators for imminent collisions | Created: 2025-05-01 | Completed: 2025-05-02
-
-### Work Log for Collision System Enhancements
-- **Completed:** 2025-05-02
-- **What was accomplished:** Successfully implemented and tested the carrier collision system with mass-based resolution, proximity awareness for small units, and visual collision indicators.
-- **Challenges:** Encountered issues with the prediction algorithm for collision detection and the avoidance behavior for small units.
-- **Solutions:** Added special case handling for direct collision paths and improved the avoidance logic for small units crossing carrier paths.
-- **Next steps:** Implement the Fighter Management System to allow carriers to store and launch fighter units.
+- [ ] **Collision System Enhancements:**
+    - [ ] Write tests for mass-based collision resolution | Created: 2025-05-01 | Completed: 
+    - [ ] Write tests for small unit collision avoidance behavior | Created: 2025-05-01 | Completed: 
+    - [ ] Define collision priority system (smaller units yield to larger) | Created: 2025-05-01 | Completed: 
+    - [ ] Modify collision detection to account for carrier dimensions | Created: 2025-05-01 | Completed: 
+    - [ ] Implement mass-ratio based collision resolution | Created: 2025-05-01 | Completed: 
+    - [ ] Add carrier proximity awareness for small units to avoid collisions | Created: 2025-05-01 | Completed: 
+    - [ ] Create visual indicators for imminent collisions | Created: 2025-05-01 | Completed: 
 
 - [ ] **Fighter Management System:**
-    - [x] Write tests for fighter storage tracking | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Write tests for launch point configuration and functionality | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Define tests for fighter launch sequence and cooldowns | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Create fighter storage system with capacity limits | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Implement launch points as configurable positions on carrier | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Add launch cooldown and queuing mechanism | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Write tests for visual launch sequence animation | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Implement visual launch sequence animation | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Implement fighter transparency fade-in effect when launching | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Improve launch point positioning for realistic launch locations | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Add initial momentum and patrol behavior for launched fighters | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Position launch points at exact edges of carrier sprite | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Implement carrier momentum inheritance for launched fighters | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Increase launch velocity for more realistic launch effect | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Improve launch animation with non-linear easing functions | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Create gradual emergence effect from inside carrier | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Increase patrol distance to prevent early stopping | Created: 2025-05-02 | Completed: 2025-05-02
+    - [ ] Write tests for fighter storage tracking | Created: 2025-05-01 | Completed: 
+    - [ ] Write tests for launch point configuration and functionality | Created: 2025-05-01 | Completed: 
+    - [ ] Define tests for fighter launch sequence and cooldowns | Created: 2025-05-01 | Completed: 
+    - [ ] Create fighter storage system with capacity limits | Created: 2025-05-01 | Completed: 
+    - [ ] Implement launch points as configurable positions on carrier | Created: 2025-05-01 | Completed: 
+    - [ ] Add launch cooldown and queuing mechanism | Created: 2025-05-01 | Completed: 
+    - [ ] Create visual launch sequence animation | Created: 2025-05-01 | Completed: 
 
-- [x] **Implement Orderly Launch/Land Sequencing**
-    - [x] Write tests for sequential one-by-one launch procedure | Created: 2025-05-01 | Completed: 2025-05-07
-    - [x] Implement launch queue management system | Created: 2025-05-01 | Completed: 2025-05-07
+- [ ] **Implement Orderly Launch/Land Sequencing**
+    - [ ] Write tests for sequential one-by-one launch procedure | Created: 2025-05-01 | Completed: 
+    - [ ] Implement launch queue management system | Created: 2025-05-01 | Completed: 
     - [ ] Create ordered landing sequence controller | Created: 2025-05-01 | Completed: 
     - [ ] Test proper sequencing during heavy traffic | Created: 2025-05-01 | Completed: 
-
-### Work Log for Orderly Launch Sequencing
-- **Completed:** 2025-05-07 16:52:34
-- **What was accomplished:** Successfully implemented a sequential one-by-one launch procedure for the carrier. Created a queue-based system that allows multiple launch requests to be processed in order, with proper cooldown periods between launches. Added tests to verify the functionality works correctly.
-- **Challenges:** Encountered issues with test failures related to the launch points configuration, launch distance, and sequence activation flag. The test expectations didn't match the implementation details.
-- **Solutions:** Modified the carrier's launch points to match test expectations, ensured fighters are launched at the correct distance from the carrier, and rewrote the problematic test to verify the actual behavior (successful fighter launch) rather than an implementation detail (flag state).
-- **Next steps:** Implement the ordered landing sequence controller to complete the full launch/land sequencing system.
 
 - [ ] **Manage Collision Detection During Operations**
     - [ ] Write tests for collision detection toggling | Created: 2025-05-01 | Completed: 
@@ -207,28 +180,11 @@ This file is the central source of truth for all project tasks, both open and co
 - [ ] **Carrier UI and Controls:**
     - [ ] Write tests for carrier selection UI events | Created: 2025-05-01 | Completed: 
     - [ ] Write tests for fighter status display functionality | Created: 2025-05-01 | Completed: 
-    - [ ] Implement carrier selection panel | Created: 2025-05-01 | Completed: 
-    - [ ] Create fighter bay status display | Created: 2025-05-01 | Completed: 
-    - [ ] Add right-click contextual actions for carrier interaction | Created: 2025-05-01 | Completed: 
-    - [ ] Create visual feedback for command acceptance | Created: 2025-05-01 | Completed: 
-
-- [ ] **Player Controls for Carrier Operations:**
-    - [x] Write tests for player-initiated fighter launches | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Implement keyboard shortcut for launching fighters from selected carrier | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Write tests for UI button for launching fighters | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Implement UI button for launching fighters when carrier is selected | Created: 2025-05-02 | Completed: 2025-05-02
-    - [ ] Create visual indicators for available/cooldown launch points | Created: 2025-05-02 | Completed: 
-    - [x] Write tests for fighter return-to-carrier commands | Created: 2025-05-02 | Completed: 2025-05-02
-    - [x] Implement right-click command to send fighters back to carrier | Created: 2025-05-02 | Completed: 2025-05-02
-    - [ ] Add visual indicators for fighters targeted to land | Created: 2025-05-02 | Completed: 
-
-## Work Log for Fighter Return-to-Carrier Commands
-- **Completed:** 2025-05-02
-- **What was accomplished:** Successfully implemented the ability for players to right-click on carriers to send selected fighters back for docking and storage. Added a multi-stage landing sequence (approach, align, land, store) with smooth animations.
-- **Challenges:** Needed to carefully handle the different states of the landing sequence and integrate this with the existing movement system. Also had to ensure proper detection of right-clicks on carriers.
-- **Solutions implemented:** Created a comprehensive landing state machine in the FriendlyUnit class, extended the InputHandler to detect clicks on carriers, and added special visual indicators for return commands. Implemented carrier position approach, orientation alignment, and fade-out effects during landing.
-- **Next steps:** Implement visual indicators for fighters targeted to land and ensure the carriers have appropriate animations for receiving fighters.
-    - [ ] Create automated landing sequence when fighters approach carrier | Created: 2025-05-02 | Completed: 
+    - [ ] Test launch command interface | Created: 2025-05-01 | Completed: 
+    - [ ] Create dedicated carrier information panel showing stats | Created: 2025-05-01 | Completed: 
+    - [ ] Implement fighter inventory display with status indicators | Created: 2025-05-01 | Completed: 
+    - [ ] Add fighter launch controls (individual/group/all options) | Created: 2025-05-01 | Completed: 
+    - [ ] Create visual indicators for available/cooldown launch points | Created: 2025-05-01 | Completed: 
 
 - [ ] **Landing and Docking System:**
     - [ ] Write tests for landing approach logic | Created: 2025-05-01 | Completed: 
@@ -284,93 +240,6 @@ This file is the central source of truth for all project tasks, both open and co
     - [ ] Add comprehensive logging for debugging | Created: 2025-05-01 | Completed: 
     - [ ] Standardize code style with auto-formatting tools | Created: 2025-05-01 | Completed: 
     - [ ] Run profiling and address performance bottlenecks | Created: 2025-05-01 | Completed: 
-
----
-
-## Selection Preview and Control Groups
-
-### Phase 10: Selection Preview Implementation
-
-- ✅ **Task: Add Preview Selection State to Units**
-    - Description: Add a new boolean attribute `preview_selected` to the `Unit` class to represent units being previewed for selection during rectangle drag.
-    - Files: `units.py`
-    - Created: 2025-05-02
-    - Completed: 2025-05-02
-    
-- ✅ **Task: Implement Preview Selection During Drag**
-    - Description: In `InputHandler.process_input`, update the mouse motion handling during drag to set the `preview_selected` flag to true for units that intersect with the current selection rectangle. Reset all units' `preview_selected` flag to false when starting a new drag and when completing the drag selection.
-    - Files: `input_handler.py`
-    - Created: 2025-05-02
-    - Completed: 2025-05-02
-    
-- ✅ **Task: Update Unit Drawing for Preview Selection**
-    - Description: Modify the `Unit.draw` method to show the green outline when either `selected` or `preview_selected` is true. The outline should use the unit's mask to accurately follow the shape of the unit.
-    - Files: `units.py`
-    - Created: 2025-05-02
-    - Completed: 2025-05-02
-    
-- ✅ **Task: Test Selection Preview Functionality**
-    - Description: Verify that the green outline appears on units as they're being dragged over, and disappears when the mouse is moved away but the drag hasn't ended yet.
-    - Files: N/A (Manual testing)
-    - Created: 2025-05-02
-    - Completed: 2025-05-02
-    
-- ✅ **Task: Fix Carrier Selection Indicator**
-    - Description: Update the carrier selection indicator to show a green outline around the sprite shape instead of a circle, matching the behavior of smaller units.
-    - Files: `carrier.py`
-    - Created: 2025-05-02
-    - Completed: 2025-05-02
-    
-- ✅ **Task: Improve Carrier Hitbox for Selection and Collision**
-    - Description: Update the carrier's hitbox to match its sprite dimensions, allowing players to select it by clicking anywhere on the image rather than just the center point.
-    - Files: `carrier.py`
-    - Created: 2025-05-02
-    - Completed: 2025-05-02
-
-### Phase 11: Control Group Management
-
-- [ ] **Task: Data Structure for Control Groups**
-    - Description: Add a dictionary `control_groups` to the `Game` class to store mappings from number keys (1-9) to lists of selected units.
-    - Files: `main.py`
-    - Created: 2025-05-02
-    - Completed: YYYY-MM-DD
-    
-- [ ] **Task: Implement Group Assignment (Command+Number)**
-    - Description: Add keyboard handling in `InputHandler.process_input` to detect Command+Number key combinations (1-9). When detected, store the currently selected units in the corresponding control group.
-    - Files: `input_handler.py`
-    - Created: 2025-05-02
-    - Completed: YYYY-MM-DD
-    
-- [ ] **Task: Implement Group Selection (Number Press)**
-    - Description: Add keyboard handling to detect number keys (1-9) without modifiers. When a number key is pressed, select all units in the corresponding control group (if it exists).
-    - Files: `input_handler.py`
-    - Created: 2025-05-02
-    - Completed: YYYY-MM-DD
-    
-- [ ] **Task: Implement Selection Modification (Shift+Click)**
-    - Description: Verify and ensure that after selecting a control group, the player can extend the current selection by holding Shift and clicking on additional units. Ensure this works consistently regardless of how the initial selection was made (drag, click, or control group).
-    - Files: `input_handler.py`
-    - Created: 2025-05-02
-    - Completed: YYYY-MM-DD
-    
-- [ ] **Task: Add Group Reassignment (Command+Number on Existing Group)**
-    - Description: Implement logic to handle reassigning units to an existing control group. When Command+Number is pressed on a group that already exists, the current selection should replace the previous group.
-    - Files: `input_handler.py`
-    - Created: 2025-05-02
-    - Completed: YYYY-MM-DD
-    
-- [ ] **Task: Test Control Group Functionality**
-    - Description: Manually test all control group features: assignment with Command+Number, selection with Number, extending selection with Shift+Click, and reassignment.
-    - Files: N/A (Manual testing)
-    - Created: 2025-05-02
-    - Completed: YYYY-MM-DD
-
-### Work Log - Selection Preview and Control Groups
-*   **Date:** 2025-05-02
-    *   **Accomplished:** Created task breakdown for implementing selection preview and control groups.
-    *   **Challenges:** None yet.
-    *   **Solutions:** None yet.
-    *   **Next steps:** Implement the preview selection feature first, then proceed with control groups.
 
 ---
 

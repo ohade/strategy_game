@@ -3,12 +3,16 @@ import pygame
 import math
 import collections
 import random
-from typing import Optional, Tuple, Union, List
+from typing import Optional, Tuple, Union, List, TYPE_CHECKING
 from dataclasses import dataclass, field
 from effects import AttackEffect # Import the new effect class
 from unit_mechanics import update_unit_attack, smooth_movement
 from camera import Camera
 from asset_manager import get_ship_sprite  # Import the ship sprite getter
+
+# To avoid circular imports
+if TYPE_CHECKING:
+    from carrier import Carrier
 
 # Define colors
 GREEN = (0, 255, 0)
@@ -53,6 +57,7 @@ class Unit:
     max_speed: float = 100
     acceleration: float = 200
     max_rotation_speed: float = 180  # degrees per second
+    mass: float = 1.0  # Mass for collision resolution (carrier will have much higher mass)
     
     # Visual interpolation
     draw_x: float = field(init=False)
@@ -73,6 +78,10 @@ class Unit:
     # Animation properties
     fade_in_duration: float = 1.0  # Time in seconds for unit to fully appear
     current_fade_time: float = 0.0  # Current progress of fade animation
+    
+    # Flight behavior attributes
+    straight_flight_timer: float = 0.0  # Timer for straight flight behavior
+    is_straight_flight: bool = False  # Flag to indicate the unit is in straight flight mode
     
     def __post_init__(self) -> None:
         """Initialize derived attributes after dataclass initialization."""
@@ -308,6 +317,44 @@ class Unit:
 
         # Movement logic
         if self.state == "moving":
+            # Check if this is a unit in straight flight mode
+            if self.is_straight_flight:
+                # Update position based on current velocity
+                self.world_x += self.velocity_x * dt
+                self.world_y += self.velocity_y * dt
+                
+                # Decrease the straight flight timer
+                self.straight_flight_timer -= dt
+                
+                # Debug output
+                if self.straight_flight_timer <= 0:
+                    print(f"DEBUG: Fighter straight flight completed, transitioning to normal movement")
+                    # When timer expires, transition to normal movement
+                    self.is_straight_flight = False
+                
+                # Continue with normal movement logic after updating position
+
+            # Check if this is a FriendlyUnit on patrol mission
+            if hasattr(self, 'is_patrolling') and self.is_patrolling:
+                # If we have a patrol timer, decrease it
+                if hasattr(self, 'patrol_timer') and self.patrol_timer > 0:
+                    self.patrol_timer -= dt
+                    
+                # Calculate distance to target if we have one
+                if isinstance(self.move_target, tuple):
+                    target_x, target_y = self.move_target
+                    dist_to_target = math.hypot(self.world_x - target_x, self.world_y - target_y)
+                    
+                    # If we're close to target or timer expired, stop patrolling and hover
+                    if dist_to_target < 10 or (hasattr(self, 'patrol_timer') and self.patrol_timer <= 0):
+                        self.set_state("idle")
+                        self.move_target = None
+                        self.is_patrolling = False  # End patrol mission
+                        # Gradually slow down when stopping
+                        self.velocity_x *= 0.8
+                        self.velocity_y *= 0.8
+                        return attack_effect_generated
+                
             target_pos = None
             if isinstance(self.move_target, Unit):
                 # Target is another unit
@@ -357,10 +404,54 @@ class Unit:
         if self.state == "attacking":
             attack_effect_generated = update_unit_attack(self, dt)
             
-        # Handle carrier return behavior for FriendlyUnit instances
-        if isinstance(self, FriendlyUnit) and hasattr(self, 'is_returning_to_carrier') and self.is_returning_to_carrier:
-            # Call the carrier return update logic
-            self.update_carrier_return(dt)
+        # Handle carrier return behavior with a more robust simplified approach
+        # Only apply to fighter units (FriendlyUnit instances that are not Carrier instances)
+        if isinstance(self, FriendlyUnit) and not hasattr(self, 'fighter_capacity') and self.is_returning_to_carrier and self.target_carrier:
+            # Calculate distance to carrier
+            distance_to_carrier = math.hypot(
+                self.world_x - self.target_carrier.world_x,
+                self.world_y - self.target_carrier.world_y
+            )
+            
+            print(f"DEBUG: Fighter {id(self)} returning to carrier {id(self.target_carrier)}")
+            print(f"DEBUG: Distance to carrier: {distance_to_carrier:.1f}, carrier radius: {self.target_carrier.radius}")
+            print(f"DEBUG: Fighter state: {self.state}, move_target: {self.move_target}")
+            
+            # CRITICAL FIX: Make sure we continue movement until we're very close to carrier
+            landing_distance = self.target_carrier.radius * 1.0  # Tighter distance requirement
+            
+            # Check if close enough to land directly
+            if distance_to_carrier <= landing_distance:
+                print(f"DEBUG: Fighter {id(self)} close enough to carrier, attempting direct landing")
+                
+                # Forcibly stop movement to ensure clean landing
+                self.velocity_x = 0
+                self.velocity_y = 0
+                self.move_target = None
+                self.state = "idle"
+                
+                # Try to land directly - with extra safety checks
+                if hasattr(self.target_carrier, 'direct_land_fighter'):
+                    landing_success = self.target_carrier.direct_land_fighter(self)
+                    print(f"DEBUG: Landing attempt result: {landing_success}")
+                    
+                    if landing_success:
+                        # Extra safeguard - make sure fighter is marked for removal
+                        self.opacity = 0
+                        self.landing_complete = True
+                        print(f"DEBUG: Fighter {id(self)} successfully landed and marked for removal")
+                    else:
+                        print(f"DEBUG: Fighter {id(self)} could not land - carrier may be at capacity")
+                        # Reset returning state but move away from carrier
+                        self.is_returning_to_carrier = False
+                        self.target_carrier = None
+                        
+                        # Move away to prevent immediate re-landing attempts
+                        offset_x = random.uniform(-100, 100)
+                        offset_y = random.uniform(-100, 100)
+                        self.move_to_point(self.world_x + offset_x, self.world_y + offset_y)
+                else:
+                    print(f"ERROR: Target carrier doesn't have direct_land_fighter method!")
 
         return attack_effect_generated # Return effect if created, else None
         
@@ -450,8 +541,12 @@ class FriendlyUnit(Unit):
         # Carrier-related attributes
         self.target_carrier = None  # Reference to carrier this fighter is returning to
         self.is_returning_to_carrier = False  # Flag to indicate return mode
-        self.landing_stage = "approach"  # approach, align, land, store
+        self.landing_stage = "idle"  # idle, approach, align, land, store
         self.landing_timer = 0.0  # Timer for landing sequence phases
+        self.landing_complete = False  # Flag to indicate fighter has landed and should be removed
+        self.patrol_timer = 0.0  # Timer for patrol behavior - when expires, fighter stops at current position
+        self.is_patrolling = False  # Flag to indicate the fighter is on a patrol mission
+        self.collision_enabled = True  # Flag to control collision detection
         
     def get_direction_x(self) -> float:
         """Get the X component of the unit's direction vector based on rotation.
@@ -490,20 +585,50 @@ class FriendlyUnit(Unit):
             self.world_y - self.target_carrier.world_y
         )
         
+        # Debug output to help troubleshoot landing sequence
+        print(f"Fighter {id(self)} is {distance_to_carrier:.1f} units from carrier {id(self.target_carrier)}, in stage: {self.landing_stage}")
+        
+        # Override normal state for landing sequence
+        self.state = "landing"  # This prevents normal movement logic from interfering
+        
         # Update based on landing stage
         if self.landing_stage == "approach":
-            # Check if we've reached the approach point
+            # Keep collision detection enabled during approach
+            self.collision_enabled = True
+            
+            # Move toward the carrier during approach
+            direct_x = self.target_carrier.world_x - self.world_x
+            direct_y = self.target_carrier.world_y - self.world_y
+            
+            # Use full speed for approach
+            approach_speed = self.max_speed * dt
+            if distance_to_carrier > 0:  # Avoid division by zero
+                self.world_x += (direct_x / distance_to_carrier) * approach_speed
+                self.world_y += (direct_y / distance_to_carrier) * approach_speed
+            
+            # Check if we're getting close to the approach point
             if distance_to_carrier <= self.target_carrier.radius * 2.5:
+                print(f"Fighter {id(self)} reached approach point, moving to align stage")
                 self.landing_stage = "align"
                 self.landing_timer = 0.0
+                # IMPORTANT: Stop normal movement - we're now in landing mode
+                self.move_target = None
+                # Stop any velocity to prevent drift
+                self.velocity_x = 0
+                self.velocity_y = 0
                 
         elif self.landing_stage == "align":
+            # Keep collision detection enabled during alignment
+            self.collision_enabled = True
+            
             # Align with carrier orientation (opposite direction to match docking)
             target_rotation = (self.target_carrier.rotation + 180) % 360
             rotation_diff = (target_rotation - self.rotation + 180) % 360 - 180
             
+            print(f"Fighter {id(self)} aligning - current rotation: {self.rotation:.1f}, target: {target_rotation:.1f}, diff: {rotation_diff:.1f}")
+            
             # Rotate smoothly toward target rotation
-            rotation_step = min(self.max_rotation_speed * dt, abs(rotation_diff))
+            rotation_step = min(self.max_rotation_speed * dt * 5, abs(rotation_diff))  # Faster rotation for testing
             if rotation_diff > 0:
                 self.rotation += rotation_step
             else:
@@ -512,13 +637,32 @@ class FriendlyUnit(Unit):
             # Keep rotation in 0-360 range
             self.rotation = self.rotation % 360
             
-            # Check if aligned (within tolerance)
-            if abs(rotation_diff) < 10:  # 10 degree tolerance
+            # Ensure we stay in place during alignment
+            self.velocity_x = 0
+            self.velocity_y = 0
+            
+            # For testing purposes, use a wider tolerance
+            if abs(rotation_diff) < 20:  # 20 degree tolerance for testing
+                print(f"Fighter {id(self)} aligned with carrier, moving to land stage")
                 self.landing_stage = "land"
                 self.landing_timer = 0.0
                 
+                # Disable collision detection during landing phase
+                self.collision_enabled = False
+                print(f"Fighter {id(self)} disabled collision detection for landing")
+                
         elif self.landing_stage == "land":
-            # Move toward carrier center
+            # Actually move toward carrier center (not just set velocity)
+            direct_x = self.target_carrier.world_x - self.world_x
+            direct_y = self.target_carrier.world_y - self.world_y
+            
+            # Normalize and scale for landing speed - faster for testing
+            landing_speed = 120 * dt  # Faster approach for testing
+            if distance_to_carrier > 0:  # Avoid division by zero
+                self.world_x += (direct_x / distance_to_carrier) * landing_speed
+                self.world_y += (direct_y / distance_to_carrier) * landing_speed
+            
+            # Set velocity for visual effects (engine flare)
             self.velocity_x = self.target_carrier.get_direction_x() * -30  # Slow approach
             self.velocity_y = self.target_carrier.get_direction_y() * -30
             
@@ -526,22 +670,49 @@ class FriendlyUnit(Unit):
             self.velocity_x += self.target_carrier.velocity_x
             self.velocity_y += self.target_carrier.velocity_y
             
-            # Fade out during landing
-            self.opacity = max(0, self.opacity - int(255 * dt))
+            # Fade out during landing - faster for testing
+            fade_speed = 255 * dt * 3.0  # Much faster fade out for testing
+            self.opacity = max(0, self.opacity - int(fade_speed))
             
-            # Check if close enough to carrier to be stored
-            if distance_to_carrier <= self.target_carrier.radius * 0.8:
+            print(f"Fighter {id(self)} landing - distance: {distance_to_carrier:.1f}, opacity: {self.opacity}")
+            
+            # Check if close enough to carrier to be stored - more lenient for testing
+            if distance_to_carrier <= self.target_carrier.radius * 0.8 or self.opacity <= 50:
+                print(f"Fighter {id(self)} close enough to carrier, moving to store stage")
                 self.landing_stage = "store"
                 
         elif self.landing_stage == "store":
+            # Keep collision detection disabled during storage
+            self.collision_enabled = False
+            
+            # Make sure fighter is completely invisible before storing
+            self.opacity = 0
+            
+            print(f"Fighter {id(self)} attempting to store in carrier {id(self.target_carrier)}")
             # Try to store the fighter in the carrier
-            if self.target_carrier.store_fighter(self):
+            store_success = self.target_carrier.store_fighter(self)
+            print(f"Fighter storage attempt result: {store_success}")
+            
+            if store_success:
                 # Reset state since the fighter is now stored
                 self.is_returning_to_carrier = False
                 self.target_carrier = None
-                self.landing_stage = "approach"
+                self.landing_stage = "idle"  # Reset to idle state
                 self.opacity = 0  # Completely invisible
+                self.landing_complete = True  # Mark for removal from active units
+                print(f"Fighter {id(self)} has been stored in carrier, ready for removal")
                 # Main loop will need to remove this fighter from the active units list
+            else:
+                print(f"WARNING: Failed to store fighter in carrier - may be at capacity")
+                # If storage failed (carrier at capacity), cancel return
+                self.is_returning_to_carrier = False
+                self.target_carrier = None
+                self.landing_stage = "idle"
+                self.opacity = 255  # Make visible again
+                # Re-enable collision detection
+                self.collision_enabled = True
+                # Move away from carrier to prevent collision
+                self.move_to_point(self.world_x + 100, self.world_y + 100)
 
 class EnemyUnit(Unit):
     def __init__(self, world_x: int, world_y: int):

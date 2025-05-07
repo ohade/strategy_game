@@ -39,14 +39,11 @@ def main() -> None:
     
     # Create a carrier with one fighter inside it
     carrier = Carrier(500, 300)  # Create carrier at position 500, 300
-    fighter_for_carrier = Unit(0, 0, 'friendly', attack_range=100)  # Create a fighter to store (position will be ignored)
-    carrier.store_fighter(fighter_for_carrier)
-    # fighter_for_carrier = Unit(0, 0, 'friendly',
-    #                            attack_range=100)  # Create a fighter to store (position will be ignored)
-    # carrier.store_fighter(fighter_for_carrier)
-    # fighter_for_carrier = Unit(0, 0, 'friendly',
-    #                            attack_range=100)  # Create a fighter to store (position will be ignored)
-    # carrier.store_fighter(fighter_for_carrier)
+
+    for i in range(10):
+        fighter_for_carrier = Unit(0, 0, 'friendly', attack_range=100)
+        carrier.store_fighter(fighter_for_carrier)
+
     # Store the fighter in the carrier
     
     friendly_units: list[Unit] = [
@@ -58,16 +55,16 @@ def main() -> None:
         # Unit(400, 350, 'friendly', attack_range=100),
         # Unit(300, 400, 'friendly', attack_range=100),
         # Unit(400, 300, 'friendly', attack_range=100),
-        # Unit(450, 350, 'friendly', attack_range=100)
+        Unit(450, 350, 'friendly', attack_range=100)
     ]
     enemy_units: list[Unit] = [
-        # Unit(800, 400, 'enemy'),
+        # Unit(1800, 1400, 'enemy'),
         # Unit(900, 500, 'enemy'),
         # Unit(850, 450, 'enemy'),
         # Unit(950, 550, 'enemy'),
-        # Unit(750, 350, 'enemy'),
-        # Unit(870, 470, 'enemy'),
-        # Unit(930, 430, 'enemy')
+        Unit(750, 350, 'enemy'),
+        Unit(870, 470, 'enemy'),
+        Unit(930, 430, 'enemy')
     ]
     all_units: list[Unit] = friendly_units + enemy_units
 
@@ -110,10 +107,16 @@ def main() -> None:
                     # Try to handle the click in the carrier panel
                     launched_fighter = carrier_panel.handle_click(mouse_pos)
                     if launched_fighter:
-                        # Add the launched fighter to friendly units
-                        friendly_units.append(launched_fighter)
-                        all_units.append(launched_fighter)
-                        ui_consumed_click = True
+                        # Check if this is a dummy fighter (just a signal that a launch was queued)
+                        if hasattr(launched_fighter, 'is_dummy') and launched_fighter.is_dummy:
+                            # Don't add the dummy to the game units, just set UI consumed flag
+                            ui_consumed_click = True
+                            print("DEBUG: Launch request queued from UI")
+                        else:
+                            # This is a real fighter (direct launch), add it to the game units
+                            friendly_units.append(launched_fighter)
+                            all_units.append(launched_fighter)
+                            ui_consumed_click = True
         
         # Call the input handler to process events and update state if UI didn't consume the click
         running, selected_units, destination_indicators, \
@@ -137,6 +140,45 @@ def main() -> None:
         # --- Game Logic Update ---
         camera.update(dt, keys) # Update camera based on key presses and dt
         
+        # --- Process Carrier Launch Queues ---
+        # Find all carriers and process their launch queues
+        for unit in all_units:
+            if isinstance(unit, Carrier) and unit.launch_queue:
+                # Process the launch queue
+                launched_fighter = unit.process_launch_queue(all_units)
+                
+                # If a fighter was launched, add it to friendly_units and create launch effect
+                if launched_fighter:
+                    # Add to friendly units if not already there
+                    if launched_fighter not in friendly_units:
+                        friendly_units.append(launched_fighter)
+                        print(f"DEBUG: Added newly launched fighter to friendly_units")
+                    
+                    # Create an explosion effect at the fighter's position
+                    launch_explosion = ExplosionEffect(
+                        world_x=launched_fighter.world_x,
+                        world_y=launched_fighter.world_y,
+                        max_radius=launched_fighter.radius * 2,
+                        duration=0.4,
+                        start_color=(100, 200, 255),  # Blue-ish
+                        end_color=(200, 230, 255)     # Light blue
+                    )
+                    effects.append(launch_explosion)
+                    print(f"DEBUG: Created launch explosion at ({launched_fighter.world_x}, {launched_fighter.world_y})")
+                
+                # Check for any other newly added fighters
+                for game_unit in all_units:
+                    if isinstance(game_unit, FriendlyUnit) and game_unit not in friendly_units:
+                        friendly_units.append(game_unit)
+                        print(f"DEBUG: Added newly launched fighter to friendly_units")
+        
+        # --- Process Carrier Landing Queues ---
+        # Find all carriers and process their landing queues
+        for unit in all_units:
+            if isinstance(unit, Carrier) and hasattr(unit, 'landing_queue') and unit.landing_queue:
+                # Process the landing queue
+                unit.process_landing_queue(all_units)
+        
         # --- Update Effects ---
         # Use game_logic.update_effects to update and clean up expired effects
         effects = update_effects(effects, dt)
@@ -150,6 +192,19 @@ def main() -> None:
             effect = unit.update(dt)
             if effect: # If unit update returned an effect (e.g., attack)
                 effects.append(effect)
+                
+            # Check if fighter has completed landing and been stored in a carrier
+            if isinstance(unit, FriendlyUnit) and hasattr(unit, 'landing_complete'):
+                # If the fighter has completed landing and marked for removal
+                if unit.landing_complete:
+                    # Mark the fighter for removal from the active units list
+                    if unit not in units_to_remove:
+                        print(f"DEBUG: Fighter {id(unit)} has landed on carrier and will be removed")
+                        units_to_remove.append(unit)
+                        
+                        # Also remove from friendly_units list to ensure proper cleanup
+                        if unit in friendly_units:
+                            friendly_units.remove(unit)
 
             # Use game_logic module for unit targeting
             update_targeting(unit, friendly_units, enemy_units)

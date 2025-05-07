@@ -134,6 +134,7 @@ class InputHandler:
 
                 # --- Right Click ---    
                 elif event.button == 3 and selected_units:
+                    print("OHAD!!! Right click")
                     target_world_x, target_world_y = camera.screen_to_world_coords(click_screen_pos[0], click_screen_pos[1])
                     destination_indicators.clear() # Clear previous indicators
                     
@@ -146,9 +147,11 @@ class InputHandler:
                             if world_rect.collidepoint((target_world_x, target_world_y)):
                                 clicked_carrier = unit
                                 break
-                    
+                    print(f"OHAD!!! Clicked carrier: {clicked_carrier}")
+                    print(f"OHAD!!! Selected units: {selected_units}")
                     # If clicked on a carrier, check if selected units should return to it
                     if clicked_carrier and all(isinstance(unit, FriendlyUnit) for unit in selected_units):
+
                         # Process fighter return command using game_input
                         target_world_pos = (target_world_x, target_world_y)
                         return_successful = self.game_input.process_return_to_carrier_command(

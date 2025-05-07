@@ -141,36 +141,36 @@ class AssetManager:
         """Load background layers for parallax scrolling effect."""
         try:
             # Load background layers with different parallax factors
-            # Layer 0: Stars (furthest, slowest)
-            stars = load_image('stars.png', scale=1.0)
+            # Layer 0: Far background (furthest, slowest)
+            bg_far = load_image('bg_far.png', scale=1.0)
             self.background_layers.append({
-                'surface': stars,
+                'surface': bg_far,
                 'parallax_factor': 0.2,  # Moves at 20% of camera speed
                 'repeat_x': True,
                 'repeat_y': True
             })
             
-            # Layer 1: Nebula
-            nebula = load_image('nebula.png', scale=1.0)
+            # Layer 1: Mid background (middle distance)
+            bg_mid = load_image('bg_mid.png', scale=1.0)
             self.background_layers.append({
-                'surface': nebula,
+                'surface': bg_mid,
                 'parallax_factor': 0.4,  # Moves at 40% of camera speed
                 'repeat_x': True,
                 'repeat_y': False
             })
             
-            # Layer 2: Planets (closest, fastest)
-            planets = load_image('planets.png', scale=1.0)
+            # Layer 2: Near background (closest, fastest)
+            bg_near = load_image('bg_near.png', scale=1.0)
             self.background_layers.append({
-                'surface': planets,
+                'surface': bg_near,
                 'parallax_factor': 0.6,  # Moves at 60% of camera speed
                 'repeat_x': False,
                 'repeat_y': False
             })
             
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             # Use placeholder background if files don't exist yet
-            print("Background layer files not found, using placeholder graphics")
+            print(f"Background layer files not found: {e}, using placeholder graphics")
             self._create_placeholder_backgrounds()
     
     def _create_placeholder_backgrounds(self) -> None:
@@ -266,20 +266,29 @@ class AssetManager:
     
     def load_effect_animations(self) -> None:
         """Load effect animations (explosions, lasers, etc.)."""
+        loaded_all = True
+        
+        # Load explosion animation
         try:
-            # Load explosion animation
             self.effect_animations['explosion'] = load_animation(
                 'explosion_{}.png', 5, scale=1.0
             )
+        except FileNotFoundError as e:
+            print(f"Explosion animation files not found: {e}")
+            loaded_all = False
             
-            # Load laser animation
+        # Load laser animation
+        try:
             self.effect_animations['laser'] = load_animation(
                 'laser_{}.png', 3, scale=1.0
             )
+        except FileNotFoundError as e:
+            print(f"Laser animation files not found: {e}")
+            loaded_all = False
             
-        except FileNotFoundError:
+        if not loaded_all:
             # Use placeholder animations if files don't exist yet
-            print("Effect animation files not found, using placeholder graphics")
+            print("Some effect animation files not found, using placeholder graphics")
             self._create_placeholder_animations()
     
     def _create_placeholder_animations(self) -> None:
