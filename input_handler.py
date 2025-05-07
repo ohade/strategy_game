@@ -35,7 +35,7 @@ class InputHandler:
         selected_units: List[Unit],
         unit_info_panel: UnitInfoPanel,
         destination_indicators: List[DestinationIndicator]
-    ) -> Tuple[bool, List[Unit], List[DestinationIndicator], bool, Optional[Tuple[int, int]], Optional[Tuple[int, int]]]:
+    ) -> Tuple[bool, List[Unit], List[DestinationIndicator], bool, Optional[Tuple[int, int]], Optional[Tuple[int, int]], Optional[Unit]]:
         """Processes all input events for a single frame.
 
         Args:
@@ -57,6 +57,7 @@ class InputHandler:
             - is_dragging (bool): Current drag state.
             - drag_start_pos (Optional[Tuple[int, int]]): Drag start position.
             - drag_current_pos (Optional[Tuple[int, int]]): Drag current position.
+            - launched_fighter (Optional[Unit]): A fighter unit launched via keyboard shortcut, if any.
         """
         running = True
         launched_fighter = None  # Track if a fighter was launched this frame
@@ -247,11 +248,13 @@ class InputHandler:
                 carriers = [unit for unit in all_units if isinstance(unit, Carrier)]
                 
                 # Process carrier keyboard commands
-                fighter = self.game_input.process_carrier_key_command(event, carriers)
+                fighter = self.game_input.process_carrier_key_command(event, carriers, all_units)
                 if fighter:
                     launched_fighter = fighter
-                    # Add the launched fighter to all_units list
-                    all_units.append(fighter)
+                    # Add the launched fighter to all_units list if not already added
+                    # (launch_all_fighters already adds fighters to all_units)
+                    if fighter not in all_units:
+                        all_units.append(fighter)
             
             # --- Mouse Motion Events --- 
             elif event.type == pygame.MOUSEMOTION:
@@ -281,4 +284,4 @@ class InputHandler:
                             unit.preview_selected = False
         
         # Return updated state
-        return running, selected_units, destination_indicators, self.is_dragging, self.drag_start_pos, self.drag_current_pos
+        return running, selected_units, destination_indicators, self.is_dragging, self.drag_start_pos, self.drag_current_pos, launched_fighter

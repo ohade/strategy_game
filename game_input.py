@@ -17,18 +17,21 @@ class GameInput:
         """Initialize the input handler."""
         # Define key mappings
         self.carrier_launch_key = pygame.K_l  # 'L' key for launching fighters
+        self.carrier_launch_all_key = pygame.K_a  # 'A' key for launching all fighters
         self.carrier_recall_key = pygame.K_r  # 'R' key for recalling fighters
     
-    def process_carrier_key_command(self, event: pygame.event.Event, carriers: List[Carrier]) -> Optional[FriendlyUnit]:
+    def process_carrier_key_command(self, event: pygame.event.Event, carriers: List[Carrier], all_units: List = None) -> Optional[FriendlyUnit]:
         """
         Process keyboard commands for carrier operations.
         
         Args:
             event: The pygame event to process
             carriers: List of carrier objects in the game
+            all_units: Optional list of all game units for adding launched fighters
             
         Returns:
             Optional[FriendlyUnit]: The launched fighter if a launch was triggered, None otherwise
+                                    If multiple fighters are launched (launch_all), returns the first one
         """
         # Only process KEYDOWN events
         if event.type != pygame.KEYDOWN:
@@ -41,6 +44,16 @@ class GameInput:
                 if carrier.selected:
                     # Attempt to launch a fighter
                     return carrier.launch_fighter()
+        
+        # Check for launch all key
+        elif event.key == self.carrier_launch_all_key:
+            # Find the first selected carrier
+            for carrier in carriers:
+                if carrier.selected:
+                    # Queue all fighters for launch
+                    if carrier.launch_all_fighters():
+                        print(f"DEBUG: Queued all fighters for sequential launch with 'A' key")
+                        return None
         
         # No fighter was launched
         return None
@@ -106,14 +119,19 @@ class GameInput:
         results = {
             'launched_fighter': None,
             'command_processed': False,
-            'returning_fighters': False
+            'returning_fighters': False,
+            'launched_all': False
         }
         
         # Process carrier-specific commands if carriers exist
         if 'carriers' in game_objects and game_objects['carriers']:
-            fighter = self.process_carrier_key_command(event, game_objects['carriers'])
+            all_units = game_objects.get('all_units', [])
+            fighter = self.process_carrier_key_command(event, game_objects['carriers'], all_units)
             if fighter:
                 results['launched_fighter'] = fighter
                 results['command_processed'] = True
+                # Check if this was a launch_all command by checking if carrier has no more stored fighters
+                if event.type == pygame.KEYDOWN and event.key == self.carrier_launch_all_key:
+                    results['launched_all'] = True
         
         return results

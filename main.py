@@ -9,8 +9,9 @@ from effects import DestinationIndicator, ExplosionEffect  # Import the effect c
 from game_logic import update_targeting, update_effects, detect_unit_collision, resolve_collision_with_mass
 from input_handler import InputHandler  # Import the new handler
 from ui import UnitInfoPanel, CarrierPanel  # Import both UI panels
-from units import Unit, FriendlyUnit  # Import both unit classes for type checking
+from units import Unit, FriendlyUnit, EnemyUnit  # Import all unit classes for type checking
 from carrier import Carrier  # Import our new Carrier class
+from visibility import VisibilityGrid, VisibilityState  # Import the fog of war system and states
 
 
 def main() -> None:
@@ -26,6 +27,9 @@ def main() -> None:
     
     # Create parallax background with 3 layers
     background = ParallaxBackground(MAP_WIDTH, MAP_HEIGHT, num_layers=3)
+    
+    # Initialize fog of war visibility system
+    visibility_grid = VisibilityGrid(MAP_WIDTH, MAP_HEIGHT, cell_size=20)  # 20px cell size for performance
     
     # Create UI components
     unit_info_panel = UnitInfoPanel(SCREEN_WIDTH)
@@ -89,6 +93,10 @@ def main() -> None:
         keys = pygame.key.get_pressed() # Get current key states
         mouse_pos = pygame.mouse.get_pos()
         
+        # Update fog of war visibility based on friendly unit positions
+        # Get list of visible enemy units
+        visible_enemies = visibility_grid.update_visibility(friendly_units, enemy_units)
+        
         # Update carrier panel's selected carrier if carrier is in selected units
         selected_carrier = None
         for unit in selected_units:
@@ -104,12 +112,18 @@ def main() -> None:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left click
                 # Check if we have a selected carrier and the click is on the panel
                 if selected_carrier:
-                    # Try to handle the click in the carrier panel
-                    launched_fighter = carrier_panel.handle_click(mouse_pos)
+                    # Check if carrier panel was clicked
+                    launched_fighter = carrier_panel.handle_click(event.pos)
                     if launched_fighter:
-                        # Check if this is a dummy fighter (just a signal that a launch was queued)
+                        # If it's a dummy fighter, it means a launch was queued
                         if hasattr(launched_fighter, 'is_dummy') and launched_fighter.is_dummy:
-                            # Don't add the dummy to the game units, just set UI consumed flag
+                            # Check if this is a launch_all request
+                            if hasattr(launched_fighter, 'is_launch_all') and launched_fighter.is_launch_all:
+                                # Queue all fighters for sequential launch
+                                success = selected_carrier.launch_all_fighters()
+                                if success:
+                                    print(f"DEBUG: Queued all fighters for sequential launch with UI button")
+                            # Don't add the dummy to the game units
                             ui_consumed_click = True
                             print("DEBUG: Launch request queued from UI")
                         else:
@@ -120,7 +134,7 @@ def main() -> None:
         
         # Call the input handler to process events and update state if UI didn't consume the click
         running, selected_units, destination_indicators, \
-        is_dragging, drag_start_pos, drag_current_pos = \
+        is_dragging, drag_start_pos, drag_current_pos, launched_fighter = \
             input_handler.process_input(
                 events,
                 keys,
@@ -132,6 +146,11 @@ def main() -> None:
                 unit_info_panel,
                 destination_indicators
             )
+            
+        # Handle newly launched fighter (from direct keyboard launch)
+        if launched_fighter and launched_fighter not in friendly_units:
+            friendly_units.append(launched_fighter)
+            print(f"DEBUG: Added directly launched fighter to friendly_units")
         
         # Exit loop if running is set to False
         if not running:
@@ -260,9 +279,17 @@ def main() -> None:
         
         # Draw background elements (stars and grid)
         background.draw(screen, camera)
+        
+        # --- Draw Fog of War (before units and effects) ---
+        visibility_grid.draw_fog_of_war(screen, camera)
 
         # --- Draw Units ---
-        for unit in all_units:
+        # Draw all friendly units
+        for unit in friendly_units:
+            unit.draw(screen, camera)
+            
+        # Draw only visible enemy units
+        for unit in visible_enemies:
             unit.draw(screen, camera)
             
         # --- Draw Effects ---
@@ -307,12 +334,47 @@ def main() -> None:
         # Create a surface for the minimap with per-pixel alpha
         minimap_surface = pygame.Surface((MINIMAP_WIDTH, MINIMAP_HEIGHT), pygame.SRCALPHA)
         minimap_surface.fill(MINIMAP_BG_COLOR)
-
-        # Draw units on minimap surface
-        for unit in all_units:
+        
+        # Draw fog of war on minimap
+        fog_overlay = pygame.Surface((MINIMAP_WIDTH, MINIMAP_HEIGHT), pygame.SRCALPHA)
+        
+        # Draw areas in fog based on visibility grid
+        for grid_x in range(visibility_grid.grid_width):
+            for grid_y in range(visibility_grid.grid_height):
+                # Get cell state (0=unseen, 1=previously seen, 2=visible)
+                state = visibility_grid.get_cell_state(grid_x, grid_y)
+                
+                # Calculate minimap position for this cell
+                cell_world_x = grid_x * visibility_grid.cell_size
+                cell_world_y = grid_y * visibility_grid.cell_size
+                mini_x = int((cell_world_x / MAP_WIDTH) * MINIMAP_WIDTH)
+                mini_y = int((cell_world_y / MAP_HEIGHT) * MINIMAP_HEIGHT)
+                mini_cell_size = max(1, int((visibility_grid.cell_size / MAP_WIDTH) * MINIMAP_WIDTH))
+                
+                # Draw different fog colors based on visibility state
+                if state == VisibilityState.UNSEEN:
+                    # Completely black for unseen
+                    pygame.draw.rect(fog_overlay, (0, 0, 0, 255), 
+                                    pygame.Rect(mini_x, mini_y, mini_cell_size, mini_cell_size))
+                elif state == VisibilityState.PREVIOUSLY_SEEN:
+                    # Semi-transparent for previously seen
+                    pygame.draw.rect(fog_overlay, (0, 0, 0, 150), 
+                                    pygame.Rect(mini_x, mini_y, mini_cell_size, mini_cell_size))
+        
+        # Draw friendly units on minimap (always visible)
+        for unit in friendly_units:
             mini_x = int((unit.world_x / MAP_WIDTH) * MINIMAP_WIDTH)
             mini_y = int((unit.world_y / MAP_HEIGHT) * MINIMAP_HEIGHT)
             pygame.draw.circle(minimap_surface, unit.color, (mini_x, mini_y), 2)
+            
+        # Draw enemy units on minimap only if visible
+        for unit in visible_enemies:
+            mini_x = int((unit.world_x / MAP_WIDTH) * MINIMAP_WIDTH)
+            mini_y = int((unit.world_y / MAP_HEIGHT) * MINIMAP_HEIGHT)
+            pygame.draw.circle(minimap_surface, unit.color, (mini_x, mini_y), 2)
+            
+        # Apply fog of war to minimap
+        minimap_surface.blit(fog_overlay, (0, 0))
 
         # Draw camera view rectangle on minimap
         cam_rect_world = camera.get_world_view() # Use the new method
@@ -330,6 +392,8 @@ def main() -> None:
         
         # Blit the minimap surface onto the main screen
         screen.blit(minimap_surface, (MINIMAP_X, MINIMAP_Y))
+        
+        # Fog of war is now drawn before UI elements and after background
 
         # --- Debug: Draw Camera Position ---
         font = pygame.font.Font(None, 30) # Default font, size 30

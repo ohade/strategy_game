@@ -73,6 +73,9 @@ class Unit:
     selected: bool = False  # For player selection indication
     preview_selected: bool = False  # For selection preview during rectangle drag
     
+    # Visibility properties
+    vision_radius: int = 150  # Default vision radius for fog of war
+    
     # Transparency effect (255 = fully opaque, 0 = invisible)
     opacity: int = 255
     # Animation properties
@@ -263,11 +266,14 @@ class Unit:
         
         # Update opacity fade-in effect if unit is not fully opaque
         if self.opacity < 255:
-            # Increase fade time based on dt
-            self.current_fade_time = min(self.fade_in_duration, self.current_fade_time + dt)
+            # Increase fade time based on dt, but accelerate for better visibility
+            self.current_fade_time = min(self.fade_in_duration, self.current_fade_time + dt * 2.0)  # Double speed
             # Calculate opacity based on current fade progress
             fade_progress = self.current_fade_time / self.fade_in_duration
-            self.opacity = min(255, int(255 * fade_progress))
+            # Start with a minimum opacity of 100 to ensure immediate visibility
+            min_opacity = 100
+            fade_opacity = min(255, int(min_opacity + (255 - min_opacity) * fade_progress))
+            self.opacity = max(self.opacity, fade_opacity)  # Never decrease opacity
             
             # If unit has launch_origin and is still launching, use a smooth emergence animation
             if hasattr(self, 'launch_origin') and fade_progress < 1.0:
@@ -538,6 +544,8 @@ class Unit:
 class FriendlyUnit(Unit):
     def __init__(self, world_x: int, world_y: int):
         super().__init__(world_x, world_y, unit_type='friendly')
+        # Friendly units have good vision
+        self.vision_radius = 200  # Enhanced vision radius for friendly units
         # Carrier-related attributes
         self.target_carrier = None  # Reference to carrier this fighter is returning to
         self.is_returning_to_carrier = False  # Flag to indicate return mode
@@ -585,37 +593,82 @@ class FriendlyUnit(Unit):
             self.world_y - self.target_carrier.world_y
         )
         
-        # Debug output to help troubleshoot landing sequence
-        print(f"Fighter {id(self)} is {distance_to_carrier:.1f} units from carrier {id(self.target_carrier)}, in stage: {self.landing_stage}")
+        # Debug output to help troubleshoot landing sequence (less verbose)
+        if random.random() < 0.05:  # Only print debug info occasionally to reduce spam
+            print(f"Fighter {id(self)} is {distance_to_carrier:.1f} units from carrier {id(self.target_carrier)}, in stage: {self.landing_stage}")
         
         # Override normal state for landing sequence
         self.state = "landing"  # This prevents normal movement logic from interfering
+        
+        # Add visual indicator for landing sequence - pulsing opacity effect
+        if self.landing_stage in ["approach", "align"]:
+            # Create a pulsing effect for visibility
+            pulse_rate = 5.0  # Speed of pulse
+            pulse_min = 180   # Minimum opacity
+            pulse_max = 255   # Maximum opacity
+            pulse_range = pulse_max - pulse_min
+            
+            # Calculate pulsing opacity based on sine wave
+            pulse_factor = (math.sin(self.landing_timer * pulse_rate) + 1) / 2  # 0 to 1
+            self.opacity = int(pulse_min + pulse_factor * pulse_range)
+            
+            # Update landing timer for animation effects
+            self.landing_timer += dt
         
         # Update based on landing stage
         if self.landing_stage == "approach":
             # Keep collision detection enabled during approach
             self.collision_enabled = True
             
-            # Move toward the carrier during approach
-            direct_x = self.target_carrier.world_x - self.world_x
-            direct_y = self.target_carrier.world_y - self.world_y
+            # Calculate approach point - slightly offset from carrier center
+            # This creates a more realistic approach path
+            carrier_direction_x = self.target_carrier.get_direction_x()
+            carrier_direction_y = self.target_carrier.get_direction_y()
             
-            # Use full speed for approach
-            approach_speed = self.max_speed * dt
-            if distance_to_carrier > 0:  # Avoid division by zero
-                self.world_x += (direct_x / distance_to_carrier) * approach_speed
-                self.world_y += (direct_y / distance_to_carrier) * approach_speed
+            # Approach point is behind the carrier (for landing from behind)
+            approach_distance = self.target_carrier.radius * 3.0
+            approach_point_x = self.target_carrier.world_x - carrier_direction_x * approach_distance
+            approach_point_y = self.target_carrier.world_y - carrier_direction_y * approach_distance
             
-            # Check if we're getting close to the approach point
-            if distance_to_carrier <= self.target_carrier.radius * 2.5:
+            # Calculate direction to approach point
+            direct_x = approach_point_x - self.world_x
+            direct_y = approach_point_y - self.world_y
+            distance_to_approach = math.hypot(direct_x, direct_y)
+            
+            # Use smooth approach speed with easing
+            # Faster when far away, slower as we get closer
+            base_speed = self.max_speed
+            distance_factor = min(1.0, distance_to_approach / (approach_distance * 2))
+            approach_speed = (base_speed * 0.5 + base_speed * 0.5 * distance_factor) * dt
+            
+            if distance_to_approach > 0:  # Avoid division by zero
+                self.world_x += (direct_x / distance_to_approach) * approach_speed
+                self.world_y += (direct_y / distance_to_approach) * approach_speed
+            
+            # Gradually rotate toward carrier's opposite direction during approach
+            target_rotation = (self.target_carrier.rotation + 180) % 360
+            rotation_diff = (target_rotation - self.rotation + 180) % 360 - 180
+            
+            # Rotate at half speed during approach (full speed during align stage)
+            rotation_step = min(self.max_rotation_speed * dt * 2.5, abs(rotation_diff))
+            if rotation_diff > 0:
+                self.rotation += rotation_step
+            else:
+                self.rotation -= rotation_step
+                
+            # Keep rotation in 0-360 range
+            self.rotation = self.rotation % 360
+            
+            # Check if we're close enough to the approach point
+            if distance_to_approach <= self.radius * 2 or distance_to_carrier <= self.target_carrier.radius * 2.5:
                 print(f"Fighter {id(self)} reached approach point, moving to align stage")
                 self.landing_stage = "align"
                 self.landing_timer = 0.0
-                # IMPORTANT: Stop normal movement - we're now in landing mode
+                # Stop normal movement - we're now in landing mode
                 self.move_target = None
-                # Stop any velocity to prevent drift
-                self.velocity_x = 0
-                self.velocity_y = 0
+                # Reduce velocity for more controlled movement
+                self.velocity_x *= 0.5
+                self.velocity_y *= 0.5
                 
         elif self.landing_stage == "align":
             # Keep collision detection enabled during alignment
@@ -625,10 +678,15 @@ class FriendlyUnit(Unit):
             target_rotation = (self.target_carrier.rotation + 180) % 360
             rotation_diff = (target_rotation - self.rotation + 180) % 360 - 180
             
-            print(f"Fighter {id(self)} aligning - current rotation: {self.rotation:.1f}, target: {target_rotation:.1f}, diff: {rotation_diff:.1f}")
+            # Less verbose debug output
+            if random.random() < 0.05:  # Only print occasionally
+                print(f"Fighter {id(self)} aligning - current: {self.rotation:.1f}°, target: {target_rotation:.1f}°, diff: {rotation_diff:.1f}°")
             
-            # Rotate smoothly toward target rotation
-            rotation_step = min(self.max_rotation_speed * dt * 5, abs(rotation_diff))  # Faster rotation for testing
+            # Rotate smoothly toward target rotation with easing
+            # Faster rotation when difference is large, slower as we get closer
+            rotation_factor = min(1.0, abs(rotation_diff) / 90)  # 0-1 based on difference
+            rotation_step = min(self.max_rotation_speed * dt * (3 + rotation_factor * 3), abs(rotation_diff))
+            
             if rotation_diff > 0:
                 self.rotation += rotation_step
             else:
@@ -637,47 +695,104 @@ class FriendlyUnit(Unit):
             # Keep rotation in 0-360 range
             self.rotation = self.rotation % 360
             
-            # Ensure we stay in place during alignment
-            self.velocity_x = 0
-            self.velocity_y = 0
+            # Maintain position relative to carrier during alignment
+            # This creates a more stable alignment phase
+            carrier_direction_x = self.target_carrier.get_direction_x()
+            carrier_direction_y = self.target_carrier.get_direction_y()
             
-            # For testing purposes, use a wider tolerance
-            if abs(rotation_diff) < 20:  # 20 degree tolerance for testing
-                print(f"Fighter {id(self)} aligned with carrier, moving to land stage")
-                self.landing_stage = "land"
-                self.landing_timer = 0.0
+            # Hold position behind carrier during alignment
+            hold_distance = self.target_carrier.radius * 2.0
+            target_x = self.target_carrier.world_x - carrier_direction_x * hold_distance
+            target_y = self.target_carrier.world_y - carrier_direction_y * hold_distance
+            
+            # Move toward hold position with dampening
+            hold_speed = 80 * dt
+            self.world_x += (target_x - self.world_x) * hold_speed * 0.1
+            self.world_y += (target_y - self.world_y) * hold_speed * 0.1
+            
+            # Gradually reduce velocity during alignment
+            self.velocity_x *= 0.95
+            self.velocity_y *= 0.95
+            
+            # Check if we're aligned within tolerance
+            # Use tighter tolerance for more precise alignment
+            alignment_tolerance = 10  # 10 degree tolerance
+            if abs(rotation_diff) < alignment_tolerance:
+                # Count time spent in aligned state
+                if not hasattr(self, 'alignment_hold_timer'):
+                    self.alignment_hold_timer = 0.0
                 
-                # Disable collision detection during landing phase
-                self.collision_enabled = False
-                print(f"Fighter {id(self)} disabled collision detection for landing")
+                self.alignment_hold_timer += dt
+                
+                # Only proceed after maintaining alignment for a short period
+                # This prevents premature transition if we're just passing through alignment
+                if self.alignment_hold_timer >= 0.5:  # Half second of stable alignment
+                    print(f"Fighter {id(self)} aligned with carrier, moving to land stage")
+                    self.landing_stage = "land"
+                    self.landing_timer = 0.0
+                    
+                    # Disable collision detection during landing phase
+                    self.collision_enabled = False
+                    print(f"Fighter {id(self)} disabled collision detection for landing")
+            else:
+                # Reset alignment timer if we're not aligned
+                if hasattr(self, 'alignment_hold_timer'):
+                    self.alignment_hold_timer = 0.0
                 
         elif self.landing_stage == "land":
-            # Actually move toward carrier center (not just set velocity)
+            # Calculate landing path - smooth curve to carrier center
+            # Start with direct vector to carrier
             direct_x = self.target_carrier.world_x - self.world_x
             direct_y = self.target_carrier.world_y - self.world_y
             
-            # Normalize and scale for landing speed - faster for testing
-            landing_speed = 120 * dt  # Faster approach for testing
-            if distance_to_carrier > 0:  # Avoid division by zero
-                self.world_x += (direct_x / distance_to_carrier) * landing_speed
-                self.world_y += (direct_y / distance_to_carrier) * landing_speed
+            # Add carrier's direction vector to create a curved approach
+            carrier_direction_x = self.target_carrier.get_direction_x()
+            carrier_direction_y = self.target_carrier.get_direction_y()
+            
+            # Blend between direct approach and carrier direction based on distance
+            # This creates a curved landing path that aligns with carrier direction
+            curve_factor = min(1.0, distance_to_carrier / (self.target_carrier.radius * 2))
+            approach_x = direct_x - carrier_direction_x * self.target_carrier.radius * curve_factor
+            approach_y = direct_y - carrier_direction_y * self.target_carrier.radius * curve_factor
+            
+            # Normalize and apply landing speed with easing
+            # Slower as we get closer to create smooth deceleration
+            approach_distance = math.hypot(approach_x, approach_y)
+            distance_factor = min(1.0, distance_to_carrier / (self.target_carrier.radius * 1.5))
+            landing_speed = (80 + 80 * distance_factor) * dt  # Variable speed based on distance
+            
+            if approach_distance > 0:  # Avoid division by zero
+                self.world_x += (approach_x / approach_distance) * landing_speed
+                self.world_y += (approach_y / approach_distance) * landing_speed
             
             # Set velocity for visual effects (engine flare)
-            self.velocity_x = self.target_carrier.get_direction_x() * -30  # Slow approach
-            self.velocity_y = self.target_carrier.get_direction_y() * -30
+            # Blend between approach vector and carrier direction
+            self.velocity_x = -carrier_direction_x * 30 * (1 - distance_factor) + direct_x * 0.2 * distance_factor
+            self.velocity_y = -carrier_direction_y * 30 * (1 - distance_factor) + direct_y * 0.2 * distance_factor
             
             # Apply carrier velocity to match speed
             self.velocity_x += self.target_carrier.velocity_x
             self.velocity_y += self.target_carrier.velocity_y
             
-            # Fade out during landing - faster for testing
-            fade_speed = 255 * dt * 3.0  # Much faster fade out for testing
-            self.opacity = max(0, self.opacity - int(fade_speed))
+            # Create smooth fade-out effect based on distance
+            # Faster fade as we get closer to carrier
+            fade_progress = 1.0 - min(1.0, distance_to_carrier / (self.target_carrier.radius * 1.2))
+            target_opacity = int(255 * (1.0 - fade_progress * fade_progress))  # Quadratic easing
             
-            print(f"Fighter {id(self)} landing - distance: {distance_to_carrier:.1f}, opacity: {self.opacity}")
+            # Smooth transition to target opacity
+            opacity_change = int(255 * dt * 2.0)  # Cap the rate of change
+            if self.opacity > target_opacity:
+                self.opacity = max(target_opacity, self.opacity - opacity_change)
+            else:
+                self.opacity = min(target_opacity, self.opacity + opacity_change)
             
-            # Check if close enough to carrier to be stored - more lenient for testing
-            if distance_to_carrier <= self.target_carrier.radius * 0.8 or self.opacity <= 50:
+            # Less verbose debug output
+            if random.random() < 0.05:  # Only print occasionally
+                print(f"Fighter {id(self)} landing - distance: {distance_to_carrier:.1f}, opacity: {self.opacity}")
+            
+            # Check if close enough to carrier to be stored
+            # Use distance or opacity thresholds
+            if distance_to_carrier <= self.target_carrier.radius * 0.6 or self.opacity <= 30:
                 print(f"Fighter {id(self)} close enough to carrier, moving to store stage")
                 self.landing_stage = "store"
                 
@@ -717,3 +832,5 @@ class FriendlyUnit(Unit):
 class EnemyUnit(Unit):
     def __init__(self, world_x: int, world_y: int):
         super().__init__(world_x, world_y, unit_type='enemy')
+        # Enemy units have limited vision
+        self.vision_radius = 80  # Reduced vision radius for enemy units

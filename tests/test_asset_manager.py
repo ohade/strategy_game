@@ -103,17 +103,19 @@ class TestAssetManager(unittest.TestCase):
         # Setup mock
         mock_friendly_ship = MagicMock(spec=pygame.Surface)
         mock_enemy_ship = MagicMock(spec=pygame.Surface)
-        mock_load_image.side_effect = [mock_friendly_ship, mock_enemy_ship]
+        mock_carrier_ship = MagicMock(spec=pygame.Surface)
+        mock_load_image.side_effect = [mock_friendly_ship, mock_enemy_ship, mock_carrier_ship]
         
         # Call the function
         manager = AssetManager()
         manager.load_ship_sprites()
         
         # Assertions
-        self.assertEqual(mock_load_image.call_count, 2)
-        self.assertEqual(len(manager.ship_sprites), 2)
+        self.assertEqual(mock_load_image.call_count, 3)  # Updated to 3 for carrier
+        self.assertEqual(len(manager.ship_sprites), 3)  # Updated to 3 for carrier
         self.assertIn('friendly', manager.ship_sprites)
         self.assertIn('enemy', manager.ship_sprites)
+        self.assertIn('carrier', manager.ship_sprites)  # Added carrier assertion
     
     @patch('asset_manager.load_image')
     def test_load_background_layers(self, mock_load_image):

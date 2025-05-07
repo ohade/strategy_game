@@ -1,6 +1,6 @@
 """Tests for smart targeting logic with radius-based selection."""
 
-import pytest
+import unittest
 import math
 from unittest.mock import MagicMock, patch
 import sys
@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 # Import the functions we'll be implementing
 from game_logic import find_enemies_in_radius, get_closest_enemy_to_point
 
-class TestSmartTargeting:
+class TestSmartTargeting(unittest.TestCase):
     
     def test_find_enemies_in_radius_returns_empty_list_when_no_enemies(self):
         """Test that find_enemies_in_radius returns an empty list when there are no enemies."""
@@ -22,7 +22,7 @@ class TestSmartTargeting:
         
         result = find_enemies_in_radius(click_pos, enemy_units, radius)
         
-        assert result == []
+        self.assertEqual(result, [])
     
     def test_find_enemies_in_radius_finds_enemies_within_radius(self):
         """Test that find_enemies_in_radius finds enemies within the specified radius."""
@@ -50,10 +50,10 @@ class TestSmartTargeting:
         result = find_enemies_in_radius(click_pos, enemy_units, radius)
         
         # Should only find enemy1 and enemy2
-        assert len(result) == 2
-        assert enemy1 in result
-        assert enemy2 in result
-        assert enemy3 not in result
+        self.assertEqual(len(result), 2)
+        self.assertIn(enemy1, result)
+        self.assertIn(enemy2, result)
+        self.assertNotIn(enemy3, result)
     
     def test_find_enemies_in_radius_handles_exact_distance(self):
         """Test that find_enemies_in_radius correctly handles enemies exactly at the radius distance."""
@@ -71,8 +71,8 @@ class TestSmartTargeting:
         result = find_enemies_in_radius(click_pos, enemy_units, radius)
         
         # Should find the enemy
-        assert len(result) == 1
-        assert enemy in result
+        self.assertEqual(len(result), 1)
+        self.assertIn(enemy, result)
     
     def test_get_closest_enemy_to_point_returns_none_when_no_enemies(self):
         """Test that get_closest_enemy_to_point returns None when there are no enemies."""
@@ -81,7 +81,7 @@ class TestSmartTargeting:
         
         result = get_closest_enemy_to_point(click_pos, enemy_units)
         
-        assert result is None
+        self.assertIsNone(result)
     
     def test_get_closest_enemy_to_point_finds_closest_enemy(self):
         """Test that get_closest_enemy_to_point returns the enemy closest to the point."""
@@ -108,4 +108,4 @@ class TestSmartTargeting:
         result = get_closest_enemy_to_point(click_pos, enemy_units)
         
         # Should return enemy2 (closest)
-        assert result == enemy2
+        self.assertEqual(result, enemy2)

@@ -217,19 +217,20 @@ class UnitInfoPanel:
 
     def handle_click(self, mouse_pos: Tuple[int, int]) -> bool:
         """Check if the click toggles the expand/collapse state.
-
+        
         Args:
             mouse_pos (Tuple[int, int]): The screen coordinates of the mouse click.
-
+        
         Returns:
             bool: True if the click was handled by the panel (consumed), False otherwise.
         """
-        if self.toggle_button_rect and self.toggle_button_rect.collidepoint(mouse_pos):
+        if not hasattr(self, 'toggle_button_rect') or not self.toggle_button_rect:
+            return False
+            
+        # Check if click was on the toggle button
+        if self.toggle_button_rect.collidepoint(mouse_pos):
             self.is_expanded = not self.is_expanded
-            if self.is_expanded:
-                self.current_height = self.expanded_height
-            else:
-                self.current_height = self.collapsed_height
+            self.current_height = self.expanded_height if self.is_expanded else self.collapsed_height
             return True # Click consumed
             
         return False # Click not on button
@@ -238,7 +239,7 @@ class UnitInfoPanel:
 class CarrierPanel:
     """Specialized panel for carrier units with fighter launch controls."""
     
-    def __init__(self, screen_width: int, panel_height: int = 180):
+    def __init__(self, screen_width: int, panel_height: int = 220):  
         """Initialize the carrier control panel.
         
         Args:
@@ -246,23 +247,31 @@ class CarrierPanel:
             panel_height (int): Height of the panel.
         """
         self.screen_width = screen_width
-        self.panel_width = screen_width // 3  # Take up 1/3 of the screen width
-        self.panel_height = panel_height  # Increased to 180 for more space
+        self.panel_width = screen_width // 3  
+        self.panel_height = panel_height
         
-        # Panel appearance
-        self.panel_color = (20, 35, 50, 200)  # Dark blue-gray with transparency
-        self.border_color = (100, 150, 200)  # Light blue
-        self.text_color = (200, 200, 220)  # Light blue-white
-        self.title_color = (160, 200, 255)  # Light blue
-        
-        # Button appearance
-        self.button_color = (50, 90, 150)  # Medium blue
-        self.button_hover_color = (70, 120, 200)  # Brighter blue
-        self.button_disabled_color = (50, 50, 80)  # Darker gray blue
-        self.button_text_color = (240, 240, 240)  # White
-        self.button_disabled_text_color = (150, 150, 150)  # Gray
-        
-        # Prepare surface
+        self.panel_color = (20, 35, 50, 200)  
+        self.border_color = (100, 140, 180)  
+        self.text_color = (200, 200, 200)  
+        self.title_color = (160, 200, 255)  
+
+        # Button styling
+        self.button_color = (40, 80, 120)  
+        self.button_hover_color = (60, 100, 160)  
+        self.button_text_color = (220, 220, 220)  
+        self.button_disabled_color = (60, 60, 80)  
+        self.button_disabled_text_color = (150, 150, 150)  
+
+        # Launch All button styling (slightly different to distinguish)
+        self.launch_all_button_color = (80, 40, 120)  
+        self.launch_all_button_hover_color = (100, 60, 160)  
+
+        # Button dimensions
+        self.button_width = 150
+        self.button_height = 40
+        self.button_spacing = 15  
+
+        # Prepare panel surface with alpha for transparency
         self.panel_surface = pygame.Surface((self.panel_width, self.panel_height), pygame.SRCALPHA)
         
         # Prepare fonts
@@ -271,13 +280,13 @@ class CarrierPanel:
         self.info_font = pygame.font.Font(None, 24)
         self.button_font = pygame.font.Font(None, 24)
         
-        # Launch button properties
-        self.launch_button_rect: Optional[pygame.Rect] = None
-        self.button_width = 130  # Narrower for better fit
-        self.button_height = 35  # Slightly smaller height
+        # Track the selected carrier
+        self.selected_carrier: Optional[Carrier] = None
         
-        # Panel position
+        # Panel and button positions (will be set in draw)
         self.panel_rect: Optional[pygame.Rect] = None
+        self.launch_button_rect: Optional[pygame.Rect] = None
+        self.launch_all_button_rect: Optional[pygame.Rect] = None
         
         # Currently selected carrier
         self.selected_carrier: Optional[Carrier] = None
@@ -375,6 +384,46 @@ class CarrierPanel:
             button_rect.width, button_rect.height
         )
         
+        # Launch All Fighters button (below the first button)
+        y_offset += self.button_height + self.button_spacing
+        launch_all_button_rect = pygame.Rect(button_x, y_offset, self.button_width, self.button_height)
+        
+        # Determine Launch All button state (enabled/disabled)
+        has_fighters = len(self.selected_carrier.stored_fighters) > 0
+        launch_all_hover = launch_all_button_rect.collidepoint(mouse_pos[0] - panel_x, mouse_pos[1] - panel_y)
+        
+        # Draw Launch All button with appropriate state
+        if not has_fighters:
+            launch_all_color = self.button_disabled_color
+            launch_all_text_color = self.button_disabled_text_color
+        elif launch_all_hover:
+            launch_all_color = self.button_hover_color
+            launch_all_text_color = self.button_text_color
+        else:
+            launch_all_color = self.button_color
+            launch_all_text_color = self.button_text_color
+        
+        pygame.draw.rect(self.panel_surface, launch_all_color, launch_all_button_rect, 0, border_radius=5)
+        pygame.draw.rect(self.panel_surface, self.border_color, launch_all_button_rect, 2, border_radius=5)
+        
+        # Launch All button text
+        launch_all_text = "Launch All"
+        launch_all_text_surface = self.button_font.render(launch_all_text, True, launch_all_text_color)
+        launch_all_text_rect = launch_all_text_surface.get_rect(center=launch_all_button_rect.center)
+        self.panel_surface.blit(launch_all_text_surface, launch_all_text_rect)
+        
+        # Add keyboard shortcut hint
+        shortcut_text = "(Press 'A')"
+        shortcut_surface = pygame.font.Font(None, 18).render(shortcut_text, True, launch_all_text_color)
+        shortcut_rect = shortcut_surface.get_rect(midbottom=(launch_all_button_rect.centerx, launch_all_button_rect.bottom + 15))
+        self.panel_surface.blit(shortcut_surface, shortcut_rect)
+        
+        # Store the launch all button rect in screen coordinates for click detection
+        self.launch_all_button_rect = pygame.Rect(
+            launch_all_button_rect.x + panel_x, launch_all_button_rect.y + panel_y,
+            launch_all_button_rect.width, launch_all_button_rect.height
+        )
+        
         # Draw the panel to the screen
         surface.blit(self.panel_surface, self.panel_rect)
     
@@ -404,4 +453,16 @@ class CarrierPanel:
                 dummy.is_dummy = True  # Mark as dummy so we can identify it later
                 return dummy
         
-            return None  # No fighter launched
+        # Check if click was on launch all button
+        elif (self.launch_all_button_rect and 
+              self.launch_all_button_rect.collidepoint(mouse_pos) and 
+              len(self.selected_carrier.stored_fighters) > 0):
+            
+            # Get all units from the game (this is a hack, we'll need to pass them in from main.py)
+            # For now, we'll create a dummy fighter to signal that launch_all was clicked
+            dummy = FriendlyUnit(0, 0)
+            dummy.is_dummy = True
+            dummy.is_launch_all = True  # Special flag to indicate this is a launch_all request
+            return dummy
+            
+        return None  # No fighter launched

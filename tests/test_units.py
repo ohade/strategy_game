@@ -1,4 +1,4 @@
-import pytest
+import unittest
 from unittest.mock import MagicMock
 import sys
 import os
@@ -8,12 +8,12 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from units import Unit, FriendlyUnit, EnemyUnit
 
-class TestUnit:
+class TestUnit(unittest.TestCase):
     def test_set_target_calls_attack_with_valid_target(self):
         """Test that set_target calls attack method with valid target."""
         # Create a test unit and a mock target
-        unit = Unit(x=100, y=100, unit_type='friendly')
-        target = Unit(x=200, y=200, unit_type='enemy')
+        unit = Unit(world_x=100, world_y=100, unit_type='friendly')
+        target = Unit(world_x=200, world_y=200, unit_type='enemy')
         target.hp = 100  # Ensure target has health
         
         # Mock the attack method
@@ -28,7 +28,7 @@ class TestUnit:
     def test_set_target_ignores_invalid_target(self):
         """Test that set_target doesn't call attack with invalid target."""
         # Create a test unit and a mock target
-        unit = Unit(x=100, y=100, unit_type='friendly')
+        unit = Unit(world_x=100, world_y=100, unit_type='friendly')
         
         # Case 1: None target
         unit.attack = MagicMock()
@@ -36,7 +36,7 @@ class TestUnit:
         unit.attack.assert_not_called()
         
         # Case 2: Target with 0 HP
-        dead_target = Unit(x=200, y=200, unit_type='enemy')
+        dead_target = Unit(world_x=200, world_y=200, unit_type='enemy')
         dead_target.hp = 0
         
         unit.attack = MagicMock()
